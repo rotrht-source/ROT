@@ -32,6 +32,7 @@ import {
   Mail,
   MessageCircle,
   Phone,
+  RotateCcw,
 } from 'lucide-react';
 import { Store } from '../types';
 import { compressImage } from '../utils/imageCompressor';
@@ -54,6 +55,7 @@ interface Props {
   onOpenPublicView: (storeId: string) => void;
   onOpenClientAdmin: (storeId: string) => void;
   onOpenSubdomainGuide: () => void;
+  onResetData?: () => void;
 }
 
 export const HomePage: React.FC<Props> = ({
@@ -64,6 +66,7 @@ export const HomePage: React.FC<Props> = ({
   onOpenPublicView,
   onOpenClientAdmin,
   onOpenSubdomainGuide,
+  onResetData,
 }) => {
   const [activeTab, setActiveTab] = useState<'home' | 'websites' | 'admin' | 'settings'>('home');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -380,6 +383,25 @@ export const HomePage: React.FC<Props> = ({
               <Sliders className="w-3.5 h-3.5 text-red-600" />
               <span>Settings</span>
             </button>
+
+            <button
+              onClick={onOpenSubdomainGuide}
+              className="p-2 px-3 bg-blue-50/80 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl transition-all flex items-center gap-1.5 font-bold shadow-2xs active:scale-95 text-xs"
+              title="ডোমেন ও সাবডোমেন নির্দেশিকা"
+            >
+              <Globe className="w-3.5 h-3.5 text-blue-600" />
+              <span className="hidden md:inline">ডোমেন গাইড</span>
+            </button>
+
+            {onResetData && (
+              <button
+                onClick={onResetData}
+                className="p-2 bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200/80 hover:border-red-200 rounded-xl transition-all shadow-2xs active:scale-95 text-xs"
+                title="ডেটা রিসেট করুন"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
