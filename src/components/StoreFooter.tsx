@@ -15,14 +15,12 @@ interface StoreFooterProps {
   branding: StoreBranding;
   categories: Category[];
   onSelectCategory?: (categoryName: string) => void;
-  onOpenClientAdmin?: () => void;
 }
 
 export const StoreFooter: React.FC<StoreFooterProps> = ({
   branding,
   categories,
   onSelectCategory,
-  onOpenClientAdmin,
 }) => {
   const currentYear = new Date().getFullYear();
   const primaryColor = branding.primaryColor || '#DC2626';
@@ -223,18 +221,6 @@ export const StoreFooter: React.FC<StoreFooterProps> = ({
                 </button>
               </li>
             </ul>
-
-            {onOpenClientAdmin && (
-              <div className="pt-2">
-                <button
-                  onClick={onOpenClientAdmin}
-                  className="text-[11px] text-slate-400 hover:text-slate-200 hover:underline flex items-center gap-1 font-semibold"
-                >
-                  <span>দোকান মালিক / ক্লায়েন্ট লগইন</span>
-                  <ExternalLink className="w-3 h-3" />
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>

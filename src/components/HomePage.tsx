@@ -37,6 +37,14 @@ import { Store } from '../types';
 import { compressImage } from '../utils/imageCompressor';
 import { uploadImageSmart } from '../utils/smartImageUploader';
 import { getImgbbApiKey, setImgbbApiKey } from '../utils/imgbbService';
+import {
+  getStoreLiveUrl,
+  getStoreAdminUrl,
+  getStoreUniqueId,
+  getStoreAdminCredentialsText,
+  getBaseOrigin,
+  DEFAULT_HOST_DOMAIN,
+} from '../utils/urlHelper';
 
 interface Props {
   stores: Store[];
@@ -548,12 +556,13 @@ export const HomePage: React.FC<Props> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {filteredStores.map((st) => {
+                const liveUrl = getStoreLiveUrl(st);
                 const fullDomain = `${st.branding.subdomain}.yourdomain.com`;
 
                 return (
                   <div
                     key={st.id}
-                    className="bg-white border border-slate-200/90 rounded-2xl p-5 hover:border-blue-500 hover:shadow-lg transition-all duration-200 space-y-4 relative group overflow-hidden"
+                    className="bg-white border border-slate-200/90 rounded-2xl p-5 hover:border-blue-500 hover:shadow-lg transition-all duration-200 space-y-4 relative group overflow-hidden flex flex-col justify-between"
                   >
                     {/* Top Accent Stripe */}
                     <div
@@ -561,43 +570,88 @@ export const HomePage: React.FC<Props> = ({
                       style={{ backgroundColor: st.branding.primaryColor || '#DC2626' }}
                     />
 
-                    <div className="flex items-center justify-between gap-3 pt-1">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div
-                          className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-white text-base shadow-sm shrink-0"
-                          style={{ backgroundColor: st.branding.primaryColor || '#DC2626' }}
-                        >
-                          {st.branding.storeName.substring(0, 2).toUpperCase()}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between gap-3 pt-1">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div
+                            className="w-12 h-12 rounded-xl flex items-center justify-center font-black text-white text-base shadow-sm shrink-0"
+                            style={{ backgroundColor: st.branding.primaryColor || '#DC2626' }}
+                          >
+                            {st.branding.storeName.substring(0, 2).toUpperCase()}
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-extrabold text-slate-900 text-base leading-tight truncate">
+                              {st.branding.storeName}
+                            </h3>
+                            <span className="text-[10px] bg-blue-50 text-blue-700 font-bold px-2 py-0.5 rounded-md border border-blue-200 inline-block mt-0.5">
+                              আলাদা ওয়েবসাইট
+                            </span>
+                          </div>
                         </div>
-                        <div className="min-w-0">
-                          <h3 className="font-extrabold text-slate-900 text-base leading-tight truncate">
-                            {st.branding.storeName}
-                          </h3>
-                          <p className="text-xs font-mono text-blue-600 font-bold mt-0.5 truncate">
-                            {fullDomain}
-                          </p>
+                      </div>
+
+                      {/* Live Store URL Box */}
+                      <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-500 font-bold flex items-center gap-1">
+                            <Globe className="w-3 h-3 text-blue-600" />
+                            <span>লাইভ ডোমেন লিংক:</span>
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => copyCreds(liveUrl, `url-${st.id}`)}
+                            className="text-blue-600 hover:text-blue-800 font-bold text-[10px] flex items-center gap-1 bg-white px-2 py-0.5 rounded border border-slate-200 shadow-2xs"
+                          >
+                            {copiedId === `url-${st.id}` ? (
+                              <>
+                                <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                <span className="text-emerald-700">কপি হয়েছে!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                <span>কপি লিংক</span>
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        <p className="font-mono text-[11px] text-slate-800 font-bold truncate bg-white p-1.5 rounded border border-slate-200/80">
+                          {liveUrl}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-200/70 text-slate-600 font-medium">
+                        <div>
+                          <span className="text-[10px] text-slate-400 block uppercase font-extrabold tracking-wider">প্রোডাক্টস</span>
+                          <span className="font-extrabold text-slate-900 text-sm">{st.products.length} Items</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 block uppercase font-extrabold tracking-wider">অর্ডারসমূহ</span>
+                          <span className="font-extrabold text-slate-900 text-sm">{st.orders.length} Orders</span>
                         </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50 p-3 rounded-xl border border-slate-200/70 text-slate-600 font-medium">
-                      <div>
-                        <span className="text-[10px] text-slate-400 block uppercase font-extrabold tracking-wider">প্রোডাক্টস</span>
-                        <span className="font-extrabold text-slate-900 text-sm">{st.products.length} Items</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-slate-400 block uppercase font-extrabold tracking-wider">অর্ডারসমূহ</span>
-                        <span className="font-extrabold text-slate-900 text-sm">{st.orders.length} Orders</span>
-                      </div>
-                    </div>
+                    {/* Action Buttons */}
+                    <div className="space-y-2 pt-2">
+                      <button
+                        onClick={() => onOpenPublicView(st.id)}
+                        className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs active:scale-95 group-hover:bg-blue-700"
+                      >
+                        <Eye className="w-4 h-4" />
+                        <span>পাবলিক ভিউ দেখুন (Open)</span>
+                      </button>
 
-                    <button
-                      onClick={() => onOpenPublicView(st.id)}
-                      className="w-full py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm active:scale-95 group-hover:bg-blue-700"
-                    >
-                      <Eye className="w-4 h-4" />
-                      <span>পাবলিক ভিউ দেখুন (Public View)</span>
-                    </button>
+                      <a
+                        href={liveUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-slate-200"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
+                        <span>আলাদা ট্যাবে লাইভ ওয়েবসাইট খুলুন</span>
+                      </a>
+                    </div>
                   </div>
                 );
               })}
@@ -605,18 +659,11 @@ export const HomePage: React.FC<Props> = ({
           </div>
         )}
 
-        {/* 3. ADMIN SECTION (Inside activeTab === 'admin') */}
+        {/* 2. ADMIN SECTION (CLIENT MANAGERS) */}
         {activeTab === 'admin' && (
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setActiveTab('home')}
-                  className="p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all"
-                  title="হোমে ফিরে যান"
-                >
-                  <ArrowLeft className="w-5 h-5" />
-                </button>
+          <div className="space-y-6">
+            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200/80 shadow-xs">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-black text-slate-900 flex items-center gap-2">
                     <Key className="w-5 h-5 text-amber-600" />
@@ -631,6 +678,10 @@ export const HomePage: React.FC<Props> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {stores.map((st) => {
+                const uniqueId = getStoreUniqueId(st);
+                const adminUrl = getStoreAdminUrl(st);
+                const credsText = getStoreAdminCredentialsText(st);
+
                 return (
                   <div
                     key={st.id}
@@ -655,41 +706,118 @@ export const HomePage: React.FC<Props> = ({
                         </span>
                       </div>
 
-                      {/* Login Info Box */}
-                      <div className="bg-amber-50/50 p-3.5 rounded-xl border border-amber-200/80 text-xs space-y-2">
-                        <div className="flex items-center justify-between text-amber-900 font-bold">
-                          <span>লগইন এক্সেস ইনফো:</span>
+                      {/* Login & Unique ID Info Box */}
+                      <div className="bg-amber-50/60 p-4 rounded-xl border border-amber-200 text-xs space-y-3">
+                        <div className="flex items-center justify-between text-amber-950 font-bold border-b border-amber-200/80 pb-2">
+                          <span className="flex items-center gap-1.5">
+                            <Shield className="w-3.5 h-3.5 text-amber-700" />
+                            <span>ইউনিক আইডি ও লগইন এক্সেস</span>
+                          </span>
                           <button
-                            onClick={() =>
-                              copyCreds(`Email: ${st.clientEmail}\nPass: ${st.clientPassword}`, st.id)
-                            }
-                            className="text-[11px] text-amber-800 hover:text-red-600 flex items-center gap-1 font-bold bg-white px-2.5 py-1 rounded-lg border border-amber-200 transition-colors shadow-2xs"
+                            type="button"
+                            onClick={() => copyCreds(credsText, `all-${st.id}`)}
+                            className="text-[11px] text-amber-900 hover:text-red-700 flex items-center gap-1 font-bold bg-white px-2.5 py-1 rounded-lg border border-amber-300 transition-colors shadow-2xs"
                           >
-                            {copiedId === st.id ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
-                            {copiedId === st.id ? 'কপি হয়েছে' : 'এক ক্লিকে কপি'}
+                            {copiedId === `all-${st.id}` ? (
+                              <>
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                                <span className="text-emerald-700 font-bold">কপি হয়েছে!</span>
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3.5 h-3.5" />
+                                <span>এক ক্লিকে সব তথ্য কপি</span>
+                              </>
+                            )}
                           </button>
                         </div>
-                        <div className="space-y-1">
-                          <p className="text-slate-700 flex items-center justify-between">
-                            <span>ইমেইল:</span>
-                            <span className="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-amber-200/50">{st.clientEmail}</span>
-                          </p>
-                          <p className="text-slate-700 flex items-center justify-between">
-                            <span>পাসওয়ার্ড:</span>
-                            <span className="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-amber-200/50">{st.clientPassword}</span>
+
+                        {/* Unique ID field */}
+                        <div className="bg-white p-2.5 rounded-lg border border-amber-200/70 space-y-1">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-slate-500 font-bold">ইউনিক আইডি (Unique ID):</span>
+                            <button
+                              type="button"
+                              onClick={() => copyCreds(uniqueId, `uid-${st.id}`)}
+                              className="text-amber-800 hover:text-amber-950 font-bold text-[10px] flex items-center gap-1"
+                            >
+                              {copiedId === `uid-${st.id}` ? (
+                                <span className="text-emerald-700 font-bold">কপি হয়েছে</span>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  <span>কপি আইডি</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                          <p className="font-mono font-black text-amber-900 text-xs tracking-wider bg-amber-50/60 px-2 py-1 rounded border border-amber-200/40">
+                            {uniqueId}
                           </p>
                         </div>
+
+                        {/* Direct Admin URL */}
+                        <div className="bg-white p-2.5 rounded-lg border border-amber-200/70 space-y-1">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-slate-500 font-bold">সরাসরি অ্যাডমিন URL (/admin/ID):</span>
+                            <button
+                              type="button"
+                              onClick={() => copyCreds(adminUrl, `url-${st.id}`)}
+                              className="text-amber-800 hover:text-amber-950 font-bold text-[10px] flex items-center gap-1"
+                            >
+                              {copiedId === `url-${st.id}` ? (
+                                <span className="text-emerald-700 font-bold">কপি হয়েছে</span>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3" />
+                                  <span>কপি লিংক</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                          <p className="font-mono font-bold text-slate-800 text-[11px] truncate bg-slate-50 px-2 py-1 rounded border border-slate-200">
+                            {adminUrl}
+                          </p>
+                        </div>
+
+                        {/* Username & Password */}
+                        <div className="space-y-1.5 pt-0.5">
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-slate-600 font-medium">ইউজারনেম / ইমেইল:</span>
+                            <span className="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-amber-200/50">{st.clientEmail}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-[11px]">
+                            <span className="text-slate-600 font-medium">পাসওয়ার্ড:</span>
+                            <span className="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-amber-200/50">{st.clientPassword}</span>
+                          </div>
+                        </div>
+
+                        <p className="text-[10px] text-amber-800/80 font-medium pt-1 border-t border-amber-200/50">
+                          💡 ব্রাউজারে ডোমেইনের পর <code className="font-mono bg-amber-100/70 px-1 py-0.5 rounded text-amber-900 font-bold">/admin/{uniqueId}</code> দিলেই এই প্যানেল ওপেন হবে।
+                        </p>
                       </div>
                     </div>
 
                     {/* Primary Direct Action Button */}
-                    <button
-                      onClick={() => onOpenClientAdmin(st.id)}
-                      className="w-full py-3 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-xs active:scale-95 mt-2"
-                    >
-                      <Settings2 className="w-4 h-4 text-white" />
-                      <span>ক্লায়েন্ট সেকশনে প্রবেশ করুন (Open Admin)</span>
-                    </button>
+                    <div className="space-y-2 mt-2">
+                      <button
+                        onClick={() => onOpenClientAdmin(st.id)}
+                        className="w-full py-2.5 px-4 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-xs active:scale-95"
+                      >
+                        <Settings2 className="w-4 h-4 text-white" />
+                        <span>ক্লায়েন্ট সেকশনে প্রবেশ করুন (Open Admin)</span>
+                      </button>
+
+                      <a
+                        href={adminUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="w-full py-2 px-3 bg-amber-50 hover:bg-amber-100 text-amber-900 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 border border-amber-200"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-amber-700" />
+                        <span>আলাদা ট্যাবে অ্যাডমিন ওপেন করুন</span>
+                      </a>
+                    </div>
                   </div>
                 );
               })}
@@ -1293,7 +1421,7 @@ export const HomePage: React.FC<Props> = ({
 
                 <div>
                   <label className="block text-slate-700 font-bold mb-1">
-                    সাবডোমেন (Subdomain) *
+                    সাবডোমেন / ইউনিক স্লাগ (Subdomain / Slug) *
                   </label>
                   <div className="flex items-center bg-slate-50 border border-slate-200 rounded-xl overflow-hidden px-3 py-2.5 focus-within:border-red-500 focus-within:bg-white min-w-0">
                     <input
@@ -1304,8 +1432,11 @@ export const HomePage: React.FC<Props> = ({
                       onChange={(e) => setSSubdomain(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''))}
                       className="w-full min-w-0 bg-transparent text-slate-900 font-bold focus:outline-none"
                     />
-                    <span className="text-[10px] text-slate-500 font-mono shrink-0">.yourdomain.com</span>
+                    <span className="text-[10px] text-slate-500 font-mono shrink-0">.rotweb.netlify.app</span>
                   </div>
+                  <p className="text-[10px] text-blue-600 font-mono font-bold mt-1 truncate">
+                    🔗 লাইভ ওয়েবসাইট লিঙ্ক: {getBaseOrigin()}/?store={sSubdomain || 'subdomain'}
+                  </p>
                 </div>
               </div>
 

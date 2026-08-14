@@ -73,7 +73,7 @@ export const HeaderBar: React.FC<Props> = ({
               >
                 {stores.map((s) => (
                   <option key={s.id} value={s.id}>
-                    {s.branding.storeName} ({s.branding.subdomain}.yourdomain.com)
+                    {s.branding.storeName} ({s.branding.subdomain}.rotweb.netlify.app)
                   </option>
                 ))}
               </select>

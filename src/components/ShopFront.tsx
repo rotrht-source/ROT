@@ -33,7 +33,6 @@ interface Props {
   cart: CartItem[];
   onAddToCart: (product: Product, quantity: number, selectedColor: string) => void;
   onOpenCart: () => void;
-  onOpenClientAdmin?: () => void;
 }
 
 export const ShopFront: React.FC<Props> = ({
@@ -41,7 +40,6 @@ export const ShopFront: React.FC<Props> = ({
   cart,
   onAddToCart,
   onOpenCart,
-  onOpenClientAdmin,
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -321,18 +319,15 @@ export const ShopFront: React.FC<Props> = ({
               </nav>
             </div>
 
-            {onOpenClientAdmin && (
-              <div className="pt-6 border-t border-gray-100">
-                <button
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    onOpenClientAdmin();
-                  }}
-                  className="w-full py-3 px-4 bg-red-600 text-white rounded-md text-xs font-bold hover:bg-red-700 transition-colors flex items-center justify-center gap-2 shadow-md"
+            {branding.contactPhone && (
+              <div className="pt-4 border-t border-gray-100">
+                <a
+                  href={`tel:${branding.contactPhone}`}
+                  className="w-full py-2.5 px-3.5 bg-emerald-50 text-emerald-800 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors flex items-center justify-center gap-2 border border-emerald-200"
                 >
-                  <User className="w-4 h-4 text-white" />
-                  <span>ক্লায়েন্ট অ্যাডমিন ড্যাশবোর্ড</span>
-                </button>
+                  <Phone className="w-4 h-4 text-emerald-600" />
+                  <span>হটলাইন: {branding.contactPhone}</span>
+                </a>
               </div>
             )}
           </div>
@@ -513,7 +508,6 @@ export const ShopFront: React.FC<Props> = ({
           setSelectedCategory(cat);
           window.scrollTo({ top: 400, behavior: 'smooth' });
         }}
-        onOpenClientAdmin={onOpenClientAdmin}
       />
 
       {/* Persistent Floating WhatsApp Button */}
