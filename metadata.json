@@ -1,0 +1,8 @@
+{
+  "name": "Remix E-Commerce Foundation Platform",
+  "description": "Multi-tenant e-commerce foundation builder and client store platform with exact ShopHub store UI and client admin management.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

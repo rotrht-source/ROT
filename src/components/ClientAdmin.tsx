@@ -1,0 +1,1179 @@
+import React, { useState } from 'react';
+import {
+  Package,
+  ShoppingBag,
+  DollarSign,
+  Plus,
+  Trash2,
+  Eye,
+  CheckCircle2,
+  Clock,
+  Truck,
+  XCircle,
+  ArrowLeft,
+  Filter,
+  Search,
+  Phone,
+  MapPin,
+  CreditCard,
+  User,
+  Sparkles,
+  ChevronRight,
+  AlertCircle,
+  Upload,
+  Image as ImageIcon,
+  X,
+} from 'lucide-react';
+import { Store, Product, Order } from '../types';
+import { compressImage } from '../utils/imageCompressor';
+import { uploadImageSmart } from '../utils/smartImageUploader';
+
+interface Props {
+  store: Store;
+  onUpdateStore: (updatedStore: Store) => void;
+  onBackToStorefront: () => void;
+}
+
+export const ClientAdmin: React.FC<Props> = ({
+  store,
+  onUpdateStore,
+  onBackToStorefront,
+}) => {
+  const [activeTab, setActiveTab] = useState<'orders' | 'products'>('orders');
+  const [orderFilter, setOrderFilter] = useState<'All' | Order['status']>('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  // Form states for adding/editing product
+  const [pTitle, setPTitle] = useState('');
+  const [pSalePrice, setPSalePrice] = useState('');
+  const [pOriginalPrice, setPOriginalPrice] = useState('');
+  // Dynamic categories list from store categories, existing products, and defaults
+  const availableCategories = Array.from(
+    new Set(
+      [
+        ...store.categories.map((c) => c.name),
+        ...store.products.map((p) => p.category),
+        'Clothing',
+        'Watch',
+        'Wallet',
+        'Accessories',
+        'Footwear',
+        'Electronics',
+      ].filter(Boolean)
+    )
+  );
+
+  const [pCategory, setPCategory] = useState(availableCategories[0] || 'Clothing');
+  const [customCategoryInput, setCustomCategoryInput] = useState('');
+  const [isCustomCategory, setIsCustomCategory] = useState(false);
+  const [pImage, setPImage] = useState('');
+  const [pImages, setPImages] = useState<string[]>([]);
+  const [pNewImageUrl, setPNewImageUrl] = useState('');
+  const [pDescription, setPDescription] = useState('');
+
+  const handleAddImageUrl = () => {
+    if (!pNewImageUrl.trim()) return;
+    const url = pNewImageUrl.trim();
+    if (!pImages.includes(url)) {
+      setPImages((prev) => [...prev, url]);
+    }
+    if (!pImage) setPImage(url);
+    setPNewImageUrl('');
+  };
+
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+
+  const handleMultipleProductFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploadingImage(true);
+    for (const file of Array.from(files) as File[]) {
+      try {
+        const uploadedUrl = await uploadImageSmart(file);
+        if (uploadedUrl) {
+          setPImages((prev) => (prev.includes(uploadedUrl) ? prev : [...prev, uploadedUrl]));
+          setPImage((prev) => prev || uploadedUrl);
+        }
+      } catch (err) {
+        console.error('Failed to upload/compress product image', err);
+      }
+    }
+    setIsUploadingImage(false);
+  };
+
+  const handleRemoveProductImage = (indexToRemove: number) => {
+    const removedUrl = pImages[indexToRemove];
+    const updated = pImages.filter((_, idx) => idx !== indexToRemove);
+    setPImages(updated);
+    if (pImage === removedUrl) {
+      setPImage(updated[0] || '');
+    }
+  };
+
+  const handleSetAsCoverImage = (imgUrl: string) => {
+    setPImage(imgUrl);
+  };
+
+  // Calculate Metrics
+  const totalRevenue = (store.orders || []).reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0);
+  const pendingOrdersCount = (store.orders || []).filter((o) => o.status === 'Pending').length;
+
+  // Filtered Orders
+  const filteredOrders = (store.orders || []).filter((o) => {
+    const matchesFilter = orderFilter === 'All' || o.status === orderFilter;
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      searchQuery === '' ||
+      (o.id || '').toLowerCase().includes(q) ||
+      (o.customerName || '').toLowerCase().includes(q) ||
+      (o.customerPhone || '').includes(searchQuery);
+    return matchesFilter && matchesSearch;
+  });
+
+  const handleAddProductSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pTitle || !pSalePrice) return;
+
+    const saleVal = parseFloat(pSalePrice);
+    const origVal = pOriginalPrice ? parseFloat(pOriginalPrice) : saleVal * 1.25;
+
+    const fallbackImg = 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80';
+    const allImagesList = Array.from(new Set([pImage, ...pImages].filter(Boolean)));
+    const coverPhoto = pImage || allImagesList[0] || fallbackImg;
+    const finalImagesList = allImagesList.length > 0 ? allImagesList : [fallbackImg];
+
+    const finalCategory =
+      isCustomCategory && customCategoryInput.trim()
+        ? customCategoryInput.trim()
+        : pCategory || 'Clothing';
+
+    const newProd: Product = {
+      id: 'prod-' + Date.now(),
+      title: pTitle,
+      salePrice: saleVal,
+      originalPrice: origVal,
+      discountPercentage: origVal > saleVal ? Math.round(((origVal - saleVal) / origVal) * 100) : 0,
+      category: finalCategory,
+      inStock: true,
+      rating: 5.0,
+      reviewsCount: 1,
+      mainImage: coverPhoto,
+      images: finalImagesList,
+      colors: [
+        { name: 'Default', hex: store.branding.primaryColor || '#DC2626' },
+        { name: 'Dark', hex: '#1E293B' },
+      ],
+      features: [
+        { id: 'f1', icon: 'zap', title: 'Premium Quality', subtitle: 'Guaranteed satisfaction' },
+      ],
+      description: pDescription || 'High quality product designed for durability and performance.',
+      isFlashDeal: true,
+      isBestSelling: true,
+    };
+
+    const categoryExists = store.categories.some(
+      (c) => c.name.toLowerCase() === finalCategory.toLowerCase()
+    );
+
+    const updatedCategories = categoryExists
+      ? store.categories
+      : [
+          ...store.categories,
+          {
+            id: 'cat-' + Date.now(),
+            name: finalCategory,
+            iconName: 'grid',
+            bgColor: '#FEF2F2',
+          },
+        ];
+
+    const updatedStore: Store = {
+      ...store,
+      categories: updatedCategories,
+      products: [newProd, ...store.products],
+    };
+
+    onUpdateStore(updatedStore);
+    setIsAddProductOpen(false);
+
+    // reset
+    setPTitle('');
+    setPSalePrice('');
+    setPOriginalPrice('');
+    setPImage('');
+    setPImages([]);
+    setPNewImageUrl('');
+    setPDescription('');
+    setCustomCategoryInput('');
+    setIsCustomCategory(false);
+  };
+
+  const handleStartEditProduct = (prod: Product) => {
+    setEditingProduct(prod);
+    setPTitle(prod.title);
+    setPSalePrice(String(prod.salePrice));
+    setPOriginalPrice(String(prod.originalPrice));
+    setPCategory(prod.category || 'Electronics');
+    setPImage(prod.mainImage || '');
+    const initialImages = prod.images && prod.images.length > 0 ? prod.images : [prod.mainImage].filter(Boolean);
+    setPImages(initialImages);
+    setPNewImageUrl('');
+    setPDescription(prod.description || '');
+  };
+
+  const handleUpdateProductSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingProduct || !pTitle || !pSalePrice) return;
+
+    const saleVal = parseFloat(pSalePrice);
+    const origVal = pOriginalPrice ? parseFloat(pOriginalPrice) : saleVal * 1.25;
+
+    const fallbackImg = editingProduct.mainImage || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=800&q=80';
+    const allImagesList = Array.from(new Set([pImage, ...pImages].filter(Boolean)));
+    const coverPhoto = pImage || allImagesList[0] || fallbackImg;
+    const finalImagesList = allImagesList.length > 0 ? allImagesList : [fallbackImg];
+
+    const finalCategory =
+      isCustomCategory && customCategoryInput.trim()
+        ? customCategoryInput.trim()
+        : pCategory || editingProduct.category || 'Clothing';
+
+    const updatedProd: Product = {
+      ...editingProduct,
+      title: pTitle,
+      salePrice: saleVal,
+      originalPrice: origVal,
+      discountPercentage: origVal > saleVal ? Math.round(((origVal - saleVal) / origVal) * 100) : 0,
+      category: finalCategory,
+      mainImage: coverPhoto,
+      images: finalImagesList,
+      description: pDescription || editingProduct.description,
+    };
+
+    const categoryExists = store.categories.some(
+      (c) => c.name.toLowerCase() === finalCategory.toLowerCase()
+    );
+
+    const updatedCategories = categoryExists
+      ? store.categories
+      : [
+          ...store.categories,
+          {
+            id: 'cat-' + Date.now(),
+            name: finalCategory,
+            iconName: 'grid',
+            bgColor: '#FEF2F2',
+          },
+        ];
+
+    const updatedStore: Store = {
+      ...store,
+      categories: updatedCategories,
+      products: store.products.map((p) => (p.id === editingProduct.id ? updatedProd : p)),
+    };
+
+    onUpdateStore(updatedStore);
+    setEditingProduct(null);
+
+    // reset
+    setPTitle('');
+    setPSalePrice('');
+    setPOriginalPrice('');
+    setPImage('');
+    setPImages([]);
+    setPNewImageUrl('');
+    setPDescription('');
+    setCustomCategoryInput('');
+    setIsCustomCategory(false);
+  };
+
+  const handleDeleteProduct = (productId: string) => {
+    if (!confirm('আপনি কি নিশ্চিত যে এই প্রোডাক্টটি ডিলেট করতে চান?')) return;
+    const updatedStore: Store = {
+      ...store,
+      products: store.products.filter((p) => p.id !== productId),
+    };
+    onUpdateStore(updatedStore);
+  };
+
+  const handleUpdateOrderStatus = (orderId: string, newStatus: Order['status']) => {
+    const updatedStore: Store = {
+      ...store,
+      orders: store.orders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)),
+    };
+    onUpdateStore(updatedStore);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-16">
+      {/* Top White Client Admin Header */}
+      <header className="bg-white border-b border-slate-200 px-4 py-3.5 sticky top-0 z-30 shadow-xs">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onBackToStorefront}
+              className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors border border-slate-200"
+              title="Return to Live Storefront"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-red-700 bg-red-50 border border-red-200 px-2.5 py-0.5 rounded-full">
+                  Client Admin Portal
+                </span>
+                <span className="text-xs text-slate-500 font-mono hidden sm:inline">
+                  {store.branding.subdomain}.yourdomain.com
+                </span>
+              </div>
+              <h1 className="text-lg font-black text-slate-900 truncate">
+                {store.branding.storeName} Management
+              </h1>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={onBackToStorefront}
+              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-xs active:scale-95"
+            >
+              <Eye className="w-4 h-4" />
+              <span>Live Storefront</span>
+            </button>
+          </div>
+        </div>
+      </header>
+
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {/* White Theme Metrics Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div className="bg-white border border-slate-200 p-4 sm:p-5 rounded-2xl shadow-xs space-y-2 relative overflow-hidden">
+            <div className="flex items-center justify-between text-slate-500 text-xs font-bold">
+              <span>মোট অর্ডার (Orders)</span>
+              <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
+                <ShoppingBag className="w-4.5 h-4.5" />
+              </div>
+            </div>
+            <p className="text-2xl sm:text-3xl font-black text-slate-900">{store.orders.length}</p>
+          </div>
+
+          <div className="bg-white border border-slate-200 p-4 sm:p-5 rounded-2xl shadow-xs space-y-2 relative overflow-hidden">
+            <div className="flex items-center justify-between text-slate-500 text-xs font-bold">
+              <span>পেন্ডিং অর্ডার (Pending)</span>
+              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-100">
+                <Clock className="w-4.5 h-4.5" />
+              </div>
+            </div>
+            <p className="text-2xl sm:text-3xl font-black text-amber-600">{pendingOrdersCount}</p>
+          </div>
+
+          <div className="bg-white border border-slate-200 p-4 sm:p-5 rounded-2xl shadow-xs space-y-2 relative overflow-hidden">
+            <div className="flex items-center justify-between text-slate-500 text-xs font-bold">
+              <span>অ্যাক্টিভ প্রোডাক্টস (Products)</span>
+              <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-100">
+                <Package className="w-4.5 h-4.5" />
+              </div>
+            </div>
+            <p className="text-2xl sm:text-3xl font-black text-slate-900">{store.products.length}</p>
+          </div>
+        </div>
+
+        {/* Tab Selection */}
+        <div className="bg-white rounded-2xl border border-slate-200 p-1.5 flex gap-2 shadow-xs">
+          <button
+            onClick={() => setActiveTab('orders')}
+            className={`flex-1 py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+              activeTab === 'orders'
+                ? 'bg-red-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>অর্ডারসমূহ ({store.orders.length})</span>
+            {pendingOrdersCount > 0 && (
+              <span className="bg-amber-400 text-amber-950 font-black text-[10px] px-2 py-0.5 rounded-full">
+                {pendingOrdersCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('products')}
+            className={`flex-1 py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+              activeTab === 'products'
+                ? 'bg-red-600 text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <Package className="w-4 h-4" />
+            <span>প্রোডাক্ট ক্যাটালগ ({store.products.length})</span>
+          </button>
+        </div>
+
+        {/* ORDERS TAB CONTENT */}
+        {activeTab === 'orders' && (
+          <div className="space-y-4">
+            {/* Filter & Search Header */}
+            <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-xs space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <Filter className="w-4 h-4 text-slate-500" />
+                  <span className="text-xs font-bold text-slate-700">অর্ডার ফিল্টার:</span>
+                </div>
+
+                <div className="relative flex-1 max-w-xs">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+                  <input
+                    type="text"
+                    placeholder="অর্ডার আইডি, ফোন বা নাম দিয়ে খুঁজুন..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9 pr-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-red-500 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Status Filter Pills */}
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {(['All', 'Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'] as const).map(
+                  (status) => {
+                    const count =
+                      status === 'All'
+                        ? store.orders.length
+                        : store.orders.filter((o) => o.status === status).length;
+
+                    return (
+                      <button
+                        key={status}
+                        onClick={() => setOrderFilter(status)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                          orderFilter === status
+                            ? 'bg-red-600 text-white shadow-xs'
+                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                        }`}
+                      >
+                        <span>
+                          {status === 'All' && 'সবগুলো (All)'}
+                          {status === 'Pending' && 'পেন্ডিং'}
+                          {status === 'Processing' && 'প্রসেসিং'}
+                          {status === 'Shipped' && 'শিপড'}
+                          {status === 'Delivered' && 'ডেলিভার্ড'}
+                          {status === 'Cancelled' && 'ক্যানসেলড'}
+                        </span>
+                        <span className="bg-white/20 px-1.5 py-0.2 rounded-full text-[10px]">
+                          {count}
+                        </span>
+                      </button>
+                    );
+                  }
+                )}
+              </div>
+            </div>
+
+            {filteredOrders.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center space-y-3 shadow-xs">
+                <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto" />
+                <h3 className="font-bold text-slate-800 text-base">কোনো অর্ডার পাওয়া যায়নি</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  কাস্টমার স্টোরফ্রন্ট থেকে কেনাকাটা করলে অর্ডারগুলো এখানে সাথে সাথেই প্রসেস করার জন্য জমা হবে।
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredOrders.map((order) => (
+                  <div
+                    key={order.id}
+                    className="bg-white rounded-2xl border border-slate-200 p-5 space-y-4 shadow-xs hover:border-slate-300 transition-all"
+                  >
+                    {/* Order Top Bar */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm font-black text-red-600 bg-red-50 border border-red-100 px-2.5 py-1 rounded-lg">
+                          {order.id}
+                        </span>
+                        <span className="text-xs text-slate-500">
+                          {new Date(order.createdAt).toLocaleString('bn-BD')}
+                        </span>
+                      </div>
+
+                      {/* Status Badge */}
+                      <div>
+                        {order.status === 'Pending' && (
+                          <span className="px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200 text-xs font-black rounded-full flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-amber-600" /> পেন্ডিং (Pending)
+                          </span>
+                        )}
+                        {order.status === 'Processing' && (
+                          <span className="px-3 py-1 bg-blue-50 text-blue-800 border border-blue-200 text-xs font-black rounded-full flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5 text-blue-600" /> প্রসেসিং (Processing)
+                          </span>
+                        )}
+                        {order.status === 'Shipped' && (
+                          <span className="px-3 py-1 bg-purple-50 text-purple-800 border border-purple-200 text-xs font-black rounded-full flex items-center gap-1.5">
+                            <Truck className="w-3.5 h-3.5 text-purple-600" /> শিপড (Shipped)
+                          </span>
+                        )}
+                        {order.status === 'Delivered' && (
+                          <span className="px-3 py-1 bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-black rounded-full flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> ডেলিভার্ড (Delivered)
+                          </span>
+                        )}
+                        {order.status === 'Cancelled' && (
+                          <span className="px-3 py-1 bg-red-50 text-red-800 border border-red-200 text-xs font-black rounded-full flex items-center gap-1.5">
+                            <XCircle className="w-3.5 h-3.5 text-red-600" /> ক্যানসেলড (Cancelled)
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Order Details Grid */}
+                    <div className="grid md:grid-cols-2 gap-4 text-xs">
+                      {/* Customer Info Box */}
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                        <p className="font-bold text-slate-900 border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
+                          <User className="w-4 h-4 text-red-600" />
+                          কাস্টমার ডিটেইলস:
+                        </p>
+                        <div className="space-y-1 text-slate-700">
+                          <p className="font-bold text-slate-900 text-sm">{order.customerName}</p>
+                          <p className="flex items-center gap-1.5 text-slate-600 font-medium">
+                            <Phone className="w-3.5 h-3.5 text-slate-400" />
+                            <span>ফোন: {order.customerPhone}</span>
+                          </p>
+                          <p className="flex items-start gap-1.5 text-slate-600 font-medium">
+                            <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
+                            <span>ঠিকানা: {order.customerAddress}</span>
+                          </p>
+                          <p className="flex items-center gap-1.5 text-slate-600 font-medium pt-1">
+                            <CreditCard className="w-3.5 h-3.5 text-slate-400" />
+                            <span>পেমেন্ট মেথড: {order.paymentMethod}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Items Ordered Box */}
+                      <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                        <p className="font-bold text-slate-900 border-b border-slate-200 pb-1.5 flex items-center gap-1.5">
+                          <Package className="w-4 h-4 text-red-600" />
+                          অর্ডারকৃত আইটেম:
+                        </p>
+                        <div className="space-y-2">
+                          {order.items.map((item, i) => (
+                            <div key={i} className="flex items-center justify-between text-slate-800">
+                              <span className="font-medium">
+                                {item.quantity}x {item.title} ({item.selectedColor || 'Standard'})
+                              </span>
+                              <span className="font-bold text-slate-900">
+                                {store.branding.currencySymbol}
+                                {(item.price * item.quantity).toFixed(2)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="pt-2 border-t border-slate-200 flex justify-between font-black text-sm text-emerald-700">
+                          <span>মোট সর্বমোট বিল</span>
+                          <span>
+                            {store.branding.currencySymbol}
+                            {order.totalAmount.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Status Action Controls */}
+                    <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-100 text-xs">
+                      <span className="text-slate-500 font-bold mr-2">অর্ডার স্ট্যাটাস আপডেট করুন:</span>
+                      <button
+                        onClick={() => handleUpdateOrderStatus(order.id, 'Processing')}
+                        className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg font-bold transition-all"
+                      >
+                        প্রসেসিং
+                      </button>
+                      <button
+                        onClick={() => handleUpdateOrderStatus(order.id, 'Shipped')}
+                        className="px-3 py-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-lg font-bold transition-all"
+                      >
+                        শিপড করুন
+                      </button>
+                      <button
+                        onClick={() => handleUpdateOrderStatus(order.id, 'Delivered')}
+                        className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold shadow-xs transition-all"
+                      >
+                        ডেলিভার্ড সম্পূর্ণ
+                      </button>
+                      <button
+                        onClick={() => handleUpdateOrderStatus(order.id, 'Cancelled')}
+                        className="px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg font-bold transition-all ml-auto"
+                      >
+                        ক্যানসেল
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* PRODUCTS TAB CONTENT */}
+        {activeTab === 'products' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-bold text-slate-900">প্রোডাক্ট লিস্ট ও ক্যাটালগ</h2>
+                <p className="text-xs text-slate-500">আপনার স্টোরে নতুন প্রোডাক্ট যোগ করুন অথবা ডিলেট করুন</p>
+              </div>
+
+              <button
+                onClick={() => setIsAddProductOpen(true)}
+                className="px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-xs active:scale-95"
+              >
+                <Plus className="w-4 h-4" />
+                <span>নতুন প্রোডাক্ট যোগ করুন</span>
+              </button>
+            </div>
+
+            {/* Add Product Modal (Light Modern Theme) */}
+            {isAddProductOpen && (
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xl space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h3 className="font-black text-slate-900 text-base">নতুন প্রোডাক্ট যুক্ত করুন</h3>
+                  <button
+                    onClick={() => setIsAddProductOpen(false)}
+                    className="text-slate-400 hover:text-slate-700 p-1 rounded-lg"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={handleAddProductSubmit} className="grid md:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">প্রোডাক্টের নাম *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="যেমন: Wireless Earbuds Pro"
+                      value={pTitle}
+                      onChange={(e) => setPTitle(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-medium focus:outline-none focus:border-red-500 focus:bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">প্রোডাক্ট ক্যাটাগরি (Product Category)</label>
+                    <div className="space-y-1.5">
+                      {!isCustomCategory ? (
+                        <select
+                          value={pCategory}
+                          onChange={(e) => {
+                            if (e.target.value === '__CUSTOM__') {
+                              setIsCustomCategory(true);
+                            } else {
+                              setPCategory(e.target.value);
+                            }
+                          }}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold focus:outline-none focus:border-red-500 focus:bg-white"
+                        >
+                          {availableCategories.map((cat) => (
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
+                          ))}
+                          <option value="__CUSTOM__">➕ কাস্টম ক্যাটাগরি লিখুন...</option>
+                        </select>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            placeholder="যেমন: Clothing, Watch, Wallet..."
+                            value={customCategoryInput}
+                            onChange={(e) => setCustomCategoryInput(e.target.value)}
+                            className="flex-1 bg-white border border-red-400 rounded-xl px-3.5 py-2 text-slate-900 font-bold focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setIsCustomCategory(false)}
+                            className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold"
+                          >
+                            লিস্ট দেখুন
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">বিক্রি মূল্য (Sale Price) *</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      placeholder="49.99"
+                      value={pSalePrice}
+                      onChange={(e) => setPSalePrice(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold focus:outline-none focus:border-red-500 focus:bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">
+                      মূল দাম / স্ট্রাইকথ্রু প্রাইস (Regular Price)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="69.99"
+                      value={pOriginalPrice}
+                      onChange={(e) => setPOriginalPrice(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-medium focus:outline-none focus:border-red-500 focus:bg-white"
+                    />
+                  </div>
+
+                  {/* Multiple Product Photos Gallery Section */}
+                  <div className="md:col-span-2 space-y-2.5 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-slate-900 font-bold text-xs flex items-center gap-1.5">
+                        <ImageIcon className="w-4 h-4 text-red-600" />
+                        <span>প্রোডাক্টের ছবি ও গ্যালাড়ী (Multiple Product Photos)</span>
+                      </label>
+                      <span className="text-[10px] text-slate-500 font-bold bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                        {pImages.length}টি ছবি মোট
+                      </span>
+                    </div>
+
+                    {/* File Upload & URL Input Row */}
+                    <div className="flex flex-col sm:flex-row items-stretch gap-2 pt-1">
+                      {/* Device File Upload Button */}
+                      <label className="cursor-pointer bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-2xs flex items-center justify-center gap-1.5 shrink-0 transition-colors">
+                        {isUploadingImage ? (
+                          <>
+                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span>ImgBB-তে আপলোড হচ্ছে...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" />
+                            <span>ডিভাইস থেকে একাধিক ছবি নির্বাচন করুন (ImgBB)</span>
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          disabled={isUploadingImage}
+                          onChange={handleMultipleProductFileUpload}
+                          className="hidden"
+                        />
+                      </label>
+
+                      {/* URL Paste Input */}
+                      <div className="flex-1 flex gap-1.5">
+                        <input
+                          type="url"
+                          placeholder="অথবা ছবির ওয়েব লিংক দিন (https://...)"
+                          value={pNewImageUrl}
+                          onChange={(e) => setPNewImageUrl(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddImageUrl();
+                            }
+                          }}
+                          className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-red-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddImageUrl}
+                          className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition-colors shrink-0"
+                        >
+                          + যোগ করুন
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Gallery Thumbnails Grid (9:16 portrait ratio preview) */}
+                    {pImages.length > 0 ? (
+                      <div className="pt-2">
+                        <p className="text-[11px] font-semibold text-slate-600 mb-1.5">
+                          কভার ছবি পরিবর্তন করতে ছবিতে ক্লিক করুন, অথবা মুছে ফেলতে X চাপুন:
+                        </p>
+                        <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none">
+                          {pImages.map((imgUrl, idx) => {
+                            const isCover = pImage === imgUrl || (idx === 0 && !pImage);
+                            return (
+                              <div
+                                key={idx}
+                                className={`relative w-16 aspect-[9/16] rounded-xl overflow-hidden border-2 shrink-0 group transition-all bg-white ${
+                                  isCover ? 'border-red-600 ring-2 ring-red-200 shadow-sm' : 'border-slate-200'
+                                }`}
+                              >
+                                <img src={imgUrl} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+
+                                {/* Cover Badge */}
+                                {isCover && (
+                                  <span className="absolute top-1 left-1 bg-red-600 text-white font-black text-[8px] px-1 py-0.5 rounded shadow-xs">
+                                    কভার
+                                  </span>
+                                )}
+
+                                {/* Set Cover Action */}
+                                {!isCover && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSetAsCoverImage(imgUrl)}
+                                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity text-white font-bold text-[9px] flex items-center justify-center p-1 text-center"
+                                  >
+                                    কভার বানান
+                                  </button>
+                                )}
+
+                                {/* Delete Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveProductImage(idx)}
+                                  className="absolute top-1 right-1 bg-slate-900/80 hover:bg-red-600 text-white p-1 rounded-full shadow-xs transition-colors"
+                                  title="ছবিটি সরান"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="py-3 text-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-xs">
+                        এখনো কোনো ছবি যোগ করা হয়নি। "ডিভাইস থেকে একাধিক ছবি নির্বাচন করুন" বাটনে ক্লিক করে ফাইল সিলেক্ট করুন।
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-slate-700 font-bold mb-1">বিবরণ / ডেসক্রিপশন</label>
+                    <textarea
+                      rows={3}
+                      placeholder="প্রোডাক্টের সুবিধা, ফিচারস ও ওয়ারেন্টি বিস্তারিত লিখুন..."
+                      value={pDescription}
+                      onChange={(e) => setPDescription(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-medium focus:outline-none focus:border-red-500 focus:bg-white"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2 flex justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddProductOpen(false)}
+                      className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all"
+                    >
+                      বাতিল
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-xs transition-all"
+                    >
+                      সেভ করুন
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Edit Product Modal */}
+            {editingProduct && (
+              <div className="bg-white border border-amber-200 rounded-2xl p-6 shadow-xl space-y-4">
+                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <h3 className="font-black text-slate-900 text-base">প্রোডাক্ট তথ্য এডিট করুন (Edit Product)</h3>
+                  <button
+                    onClick={() => setEditingProduct(null)}
+                    className="text-slate-400 hover:text-slate-700 p-1 rounded-lg"
+                  >
+                    ✕
+                  </button>
+                </div>
+
+                <form onSubmit={handleUpdateProductSubmit} className="grid md:grid-cols-2 gap-4 text-xs">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">প্রোডাক্টের নাম *</label>
+                    <input
+                      type="text"
+                      required
+                      value={pTitle}
+                      onChange={(e) => setPTitle(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-medium focus:outline-none focus:border-red-500 focus:bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">প্রোডাক্ট ক্যাটাগরি (Product Category)</label>
+                    <div className="space-y-1.5">
+                      {!isCustomCategory ? (
+                        <select
+                          value={pCategory}
+                          onChange={(e) => {
+                            if (e.target.value === '__CUSTOM__') {
+                              setIsCustomCategory(true);
+                            } else {
+                              setPCategory(e.target.value);
+                            }
+                          }}
+                          className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold focus:outline-none focus:border-red-500 focus:bg-white"
+                        >
+                          {availableCategories.map((cat) => (
+                            <option key={cat} value={cat}>
+                              {cat}
+                            </option>
+                          ))}
+                          <option value="__CUSTOM__">➕ কাস্টম ক্যাটাগরি লিখুন...</option>
+                        </select>
+                      ) : (
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            placeholder="যেমন: Clothing, Watch, Wallet..."
+                            value={customCategoryInput}
+                            onChange={(e) => setCustomCategoryInput(e.target.value)}
+                            className="flex-1 bg-white border border-red-400 rounded-xl px-3.5 py-2 text-slate-900 font-bold focus:outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setIsCustomCategory(false)}
+                            className="px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold"
+                          >
+                            লিস্ট দেখুন
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">বিক্রি মূল্য (Sale Price) *</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={pSalePrice}
+                      onChange={(e) => setPSalePrice(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold focus:outline-none focus:border-red-500 focus:bg-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">
+                      মূল দাম / স্ট্রাইকথ্রু প্রাইস (Regular Price)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={pOriginalPrice}
+                      onChange={(e) => setPOriginalPrice(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-medium focus:outline-none focus:border-red-500 focus:bg-white"
+                    />
+                  </div>
+
+                  {/* Multiple Product Photos Gallery Section */}
+                  <div className="md:col-span-2 space-y-2.5 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-slate-900 font-bold text-xs flex items-center gap-1.5">
+                        <ImageIcon className="w-4 h-4 text-red-600" />
+                        <span>প্রোডাক্টের ছবি ও গ্যালাড়ী (Multiple Product Photos)</span>
+                      </label>
+                      <span className="text-[10px] text-slate-500 font-bold bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                        {pImages.length}টি ছবি মোট
+                      </span>
+                    </div>
+
+                    {/* File Upload & URL Input Row */}
+                    <div className="flex flex-col sm:flex-row items-stretch gap-2 pt-1">
+                      {/* Device File Upload Button */}
+                      <label className="cursor-pointer bg-red-600 hover:bg-red-700 text-white font-bold text-xs px-3.5 py-2 rounded-xl shadow-2xs flex items-center justify-center gap-1.5 shrink-0 transition-colors">
+                        {isUploadingImage ? (
+                          <>
+                            <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span>ImgBB-তে আপলোড হচ্ছে...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="w-4 h-4" />
+                            <span>ডিভাইস থেকে একাধিক ছবি নির্বাচন করুন (ImgBB)</span>
+                          </>
+                        )}
+                        <input
+                          type="file"
+                          multiple
+                          accept="image/*"
+                          disabled={isUploadingImage}
+                          onChange={handleMultipleProductFileUpload}
+                          className="hidden"
+                        />
+                      </label>
+
+                      {/* URL Paste Input */}
+                      <div className="flex-1 flex gap-1.5">
+                        <input
+                          type="url"
+                          placeholder="অথবা ছবির ওয়েব লিংক দিন (https://...)"
+                          value={pNewImageUrl}
+                          onChange={(e) => setPNewImageUrl(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleAddImageUrl();
+                            }
+                          }}
+                          className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-red-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddImageUrl}
+                          className="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold text-xs rounded-xl transition-colors shrink-0"
+                        >
+                          + যোগ করুন
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Gallery Thumbnails Grid */}
+                    {pImages.length > 0 ? (
+                      <div className="pt-2">
+                        <p className="text-[11px] font-semibold text-slate-600 mb-1.5">
+                          কভার ছবি পরিবর্তন করতে ছবিতে ক্লিক করুন, অথবা মুছে ফেলতে X চাপুন:
+                        </p>
+                        <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none">
+                          {pImages.map((imgUrl, idx) => {
+                            const isCover = pImage === imgUrl || (idx === 0 && !pImage);
+                            return (
+                              <div
+                                key={idx}
+                                className={`relative w-16 aspect-[9/16] rounded-xl overflow-hidden border-2 shrink-0 group transition-all bg-white ${
+                                  isCover ? 'border-red-600 ring-2 ring-red-200 shadow-sm' : 'border-slate-200'
+                                }`}
+                              >
+                                <img src={imgUrl} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
+
+                                {/* Cover Badge */}
+                                {isCover && (
+                                  <span className="absolute top-1 left-1 bg-red-600 text-white font-black text-[8px] px-1 py-0.5 rounded shadow-xs">
+                                    কভার
+                                  </span>
+                                )}
+
+                                {/* Set Cover Action */}
+                                {!isCover && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSetAsCoverImage(imgUrl)}
+                                    className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity text-white font-bold text-[9px] flex items-center justify-center p-1 text-center"
+                                  >
+                                    কভার বানান
+                                  </button>
+                                )}
+
+                                {/* Delete Button */}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveProductImage(idx)}
+                                  className="absolute top-1 right-1 bg-slate-900/80 hover:bg-red-600 text-white p-1 rounded-full shadow-xs transition-colors"
+                                  title="ছবিটি সরান"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="py-3 text-center border-2 border-dashed border-slate-200 rounded-xl text-slate-400 text-xs">
+                        এখনো কোনো ছবি যোগ করা হয়নি। "ডিভাইস থেকে একাধিক ছবি নির্বাচন করুন" বাটনে ক্লিক করে ফাইল সিলেক্ট করুন।
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-slate-700 font-bold mb-1">বিবরণ / ডেসক্রিপশন</label>
+                    <textarea
+                      rows={3}
+                      value={pDescription}
+                      onChange={(e) => setPDescription(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-medium focus:outline-none focus:border-red-500 focus:bg-white"
+                    />
+                  </div>
+
+                  <div className="md:col-span-2 flex justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setEditingProduct(null)}
+                      className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all"
+                    >
+                      বাতিল
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-xs transition-all"
+                    >
+                      আপডেট প্রোডাক্ট সেভ করুন
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* Products Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {store.products.map((prod) => (
+                <div
+                  key={prod.id}
+                  className="bg-white rounded-2xl border border-slate-200 p-4 flex gap-3 relative shadow-xs hover:border-slate-300 transition-all items-start"
+                >
+                  <img
+                    src={prod.mainImage}
+                    alt={prod.title}
+                    className="w-20 h-20 object-cover rounded-xl bg-slate-100 shrink-0 border border-slate-200"
+                  />
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <h4 className="text-sm font-bold text-slate-900 truncate">{prod.title}</h4>
+                    <span className="text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-md inline-block">
+                      {prod.category}
+                    </span>
+                    <div className="text-sm font-black text-emerald-600 pt-1">
+                      {store.branding.currencySymbol}
+                      {prod.salePrice.toFixed(2)}
+                      {prod.originalPrice > prod.salePrice && (
+                        <span className="text-xs text-slate-400 line-through font-normal ml-2">
+                          {store.branding.currencySymbol}
+                          {prod.originalPrice.toFixed(2)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-1 shrink-0">
+                    <button
+                      onClick={() => handleStartEditProduct(prod)}
+                      className="text-slate-500 hover:text-blue-600 p-2 rounded-xl hover:bg-blue-50 transition-colors"
+                      title="প্রোডাক্ট এডিট করুন"
+                    >
+                      <Sparkles className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProduct(prod.id)}
+                      className="text-slate-400 hover:text-red-600 p-2 rounded-xl hover:bg-red-50 transition-colors"
+                      title="প্রোডাক্ট ডিলেট করুন"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+

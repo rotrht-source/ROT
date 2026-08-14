@@ -1,0 +1,26 @@
+{
+  "entities": {
+    "Store": {
+      "title": "Store",
+      "description": "Multi-tenant e-commerce store holding branding, products, categories, and orders",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "branding": { "type": "object" },
+        "clientEmail": { "type": "string" },
+        "clientPassword": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "categories": { "type": "array" },
+        "products": { "type": "array" },
+        "orders": { "type": "array" }
+      },
+      "required": ["id", "branding"]
+    }
+  },
+  "firestore": {
+    "/stores/{storeId}": {
+      "entity": "Store",
+      "description": "Root collection for multi-tenant stores and catalog data"
+    }
+  }
+}
