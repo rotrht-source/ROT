@@ -14,6 +14,8 @@ import { ShopFront } from './components/ShopFront';
 import { ClientAdmin } from './components/ClientAdmin';
 import { CartDrawer } from './components/CartDrawer';
 import { SubdomainGuideModal } from './components/SubdomainGuideModal';
+import { MasterLockGate } from './components/MasterLockGate';
+import { checkMasterAuthentication, logoutMaster } from './utils/masterAuth';
 import {
   parseUrlRoute,
   navigateToUrl,
@@ -21,6 +23,7 @@ import {
 
 export default function App() {
   const [stores, setStores] = useState<Store[]>(() => getStores());
+  const [isMasterAuthenticated, setIsMasterAuthenticated] = useState<boolean>(() => checkMasterAuthentication());
   
   // Initial URL Route detection
   const initialRoute = parseUrlRoute(getStores());
@@ -62,6 +65,7 @@ export default function App() {
         setSelectedStoreId(route.selectedStoreId);
       }
       setViewMode(route.viewMode);
+      setIsMasterAuthenticated(checkMasterAuthentication());
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -168,16 +172,25 @@ export default function App() {
       {/* View Mode Switching */}
       <main className="flex-1 overflow-x-hidden">
         {(viewMode === 'home' || viewMode === 'super_admin') && (
-          <HomePage
-            stores={stores}
-            onCreateStore={handleCreateStore}
-            onDeleteStore={handleDeleteStore}
-            onOpenSubdomainGuide={() => setIsGuideOpen(true)}
-            onOpenPublicView={(id) => handleNavigate('storefront', id)}
-            onOpenClientAdmin={(id) => handleNavigate('client_admin', id)}
-            onUpdateStore={handleUpdateStore}
-            onResetData={handleResetData}
-          />
+          !isMasterAuthenticated ? (
+            /* Blank White Page for unauthorized visitors */
+            <div className="min-h-screen bg-white w-full" />
+          ) : (
+            <HomePage
+              stores={stores}
+              onCreateStore={handleCreateStore}
+              onDeleteStore={handleDeleteStore}
+              onOpenSubdomainGuide={() => setIsGuideOpen(true)}
+              onOpenPublicView={(id) => handleNavigate('storefront', id)}
+              onOpenClientAdmin={(id) => handleNavigate('client_admin', id)}
+              onUpdateStore={handleUpdateStore}
+              onResetData={handleResetData}
+              onLogoutMaster={() => {
+                logoutMaster();
+                setIsMasterAuthenticated(false);
+              }}
+            />
+          )
         )}
 
         {viewMode === 'client_admin' && (
@@ -195,6 +208,7 @@ export default function App() {
               cart={cart}
               onAddToCart={handleAddToCart}
               onOpenCart={() => setIsCartOpen(true)}
+              onOpenClientAdmin={() => handleNavigate('client_admin')}
             />
           </div>
         )}

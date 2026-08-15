@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Package,
   ShoppingBag,
@@ -6,6 +6,7 @@ import {
   Plus,
   Trash2,
   Eye,
+  EyeOff,
   CheckCircle2,
   Clock,
   Truck,
@@ -23,6 +24,14 @@ import {
   Upload,
   Image as ImageIcon,
   X,
+  Lock,
+  Unlock,
+  LogOut,
+  ShieldCheck,
+  KeyRound,
+  Shield,
+  Save,
+  HelpCircle,
 } from 'lucide-react';
 import { Store, Product, Order } from '../types';
 import { compressImage } from '../utils/imageCompressor';
@@ -39,11 +48,102 @@ export const ClientAdmin: React.FC<Props> = ({
   onUpdateStore,
   onBackToStorefront,
 }) => {
-  const [activeTab, setActiveTab] = useState<'orders' | 'products'>('orders');
+  // Authentication State - Always require credentials (No Auto-Login)
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  const [inputUsername, setInputUsername] = useState('');
+  const [inputPassword, setInputPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [loginError, setLoginError] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  // Security tab state
+  const [secEmail, setSecEmail] = useState(store.clientEmail || `admin@${store.branding.subdomain}.com`);
+  const [secPassword, setSecPassword] = useState(store.clientPassword || 'password123');
+  const [secConfirmPassword, setSecConfirmPassword] = useState(store.clientPassword || 'password123');
+  const [showSecPassword, setShowSecPassword] = useState(false);
+  const [secSuccessMsg, setSecSuccessMsg] = useState(false);
+  const [secErrorMsg, setSecErrorMsg] = useState('');
+
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'security'>('orders');
   const [orderFilter, setOrderFilter] = useState<'All' | Order['status']>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+
+  // Sync security form when store changes
+  useEffect(() => {
+    setSecEmail(store.clientEmail || `admin@${store.branding.subdomain}.com`);
+    setSecPassword(store.clientPassword || 'password123');
+    setSecConfirmPassword(store.clientPassword || 'password123');
+  }, [store.id, store.clientEmail, store.clientPassword, store.branding.subdomain]);
+
+  const handleLoginSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError('');
+    setIsLoggingIn(true);
+
+    const enteredUser = inputUsername.trim().toLowerCase();
+    const enteredPass = inputPassword.trim();
+
+    const validEmail = (store.clientEmail || '').trim().toLowerCase();
+    const validSubdomain = (store.branding.subdomain || '').trim().toLowerCase();
+    const validStoreName = (store.branding.storeName || '').trim().toLowerCase();
+    const validPassword = store.clientPassword || 'password123';
+
+    // Username can match store email, subdomain, store name or 'admin'
+    const isUserValid =
+      enteredUser === validEmail ||
+      enteredUser === validSubdomain ||
+      enteredUser === 'admin' ||
+      enteredUser === validStoreName ||
+      enteredUser === `admin@${validSubdomain}.com`;
+
+    const isPassValid = enteredPass === validPassword || (validPassword === '' && enteredPass === 'password123');
+
+    setTimeout(() => {
+      setIsLoggingIn(false);
+      if (isUserValid && isPassValid) {
+        setIsAuthenticated(true);
+        setLoginError('');
+      } else {
+        setLoginError('ভুল ইউজারনেম অথবা পাসওয়ার্ড। সঠিক তথ্য দিয়ে পুনরায় চেষ্টা করুন।');
+      }
+    }, 300);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setInputPassword('');
+    setLoginError('');
+  };
+
+  const handleSaveSecuritySettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSecErrorMsg('');
+    if (!secEmail.trim()) {
+      setSecErrorMsg('ইউজারনেম বা ইমেইল খালি রাখা যাবে না।');
+      return;
+    }
+    if (!secPassword.trim() || secPassword.length < 4) {
+      setSecErrorMsg('পাসওয়ার্ড ন্যূনতম ৪ অক্ষরের হতে হবে।');
+      return;
+    }
+    if (secPassword !== secConfirmPassword) {
+      setSecErrorMsg('পাসওয়ার্ড এবং কনফার্ম পাসওয়ার্ড মিলছে না!');
+      return;
+    }
+
+    const updatedStore: Store = {
+      ...store,
+      clientEmail: secEmail.trim(),
+      clientPassword: secPassword.trim(),
+    };
+
+    onUpdateStore(updatedStore);
+    setSecSuccessMsg(true);
+    setTimeout(() => setSecSuccessMsg(false), 4000);
+  };
 
   // Form states for adding/editing product
   const [pTitle, setPTitle] = useState('');
@@ -307,6 +407,151 @@ export const ClientAdmin: React.FC<Props> = ({
     onUpdateStore(updatedStore);
   };
 
+  // -------------------------------------------------------------
+  // 1. LOGIN SCREEN (When Not Authenticated)
+  // -------------------------------------------------------------
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-950 text-slate-100 font-sans flex flex-col justify-between p-4 sm:p-6">
+        {/* Top bar back button */}
+        <div className="max-w-md w-full mx-auto flex items-center justify-between pt-2">
+          <button
+            onClick={onBackToStorefront}
+            className="flex items-center gap-2 text-xs font-bold text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 px-3.5 py-2 rounded-xl transition-all border border-slate-700/60 shadow-xs"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>স্টোরফ্রন্টে ফিরে যান</span>
+          </button>
+
+          <span className="text-[11px] font-mono text-slate-400 bg-slate-800/60 px-3 py-1.5 rounded-lg border border-slate-700/40">
+            {store.branding.subdomain}.yourdomain.com
+          </span>
+        </div>
+
+        {/* Center Login Card */}
+        <div className="max-w-md w-full mx-auto my-auto py-8">
+          <div className="bg-slate-800/90 backdrop-blur-md border border-slate-700/80 rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
+            {/* Store Brand Header */}
+            <div className="text-center space-y-2">
+              <div
+                className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center font-black text-white text-xl shadow-lg border border-white/20 transition-transform hover:scale-105"
+                style={{ backgroundColor: store.branding.primaryColor || '#DC2626' }}
+              >
+                {store.branding.logoUrl ? (
+                  <img
+                    src={store.branding.logoUrl}
+                    alt={store.branding.storeName}
+                    className="w-10 h-10 object-contain rounded-xl"
+                  />
+                ) : (
+                  store.branding.storeName.substring(0, 2).toUpperCase()
+                )}
+              </div>
+
+              <div>
+                <span className="text-[10px] font-black uppercase tracking-widest text-red-400 bg-red-950/60 border border-red-800/60 px-2.5 py-0.5 rounded-full inline-block mb-1">
+                  অ্যাডমিন পোর্টাল
+                </span>
+                <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                  {store.branding.storeName}
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">
+                  দোকানের অর্ডার ও প্রোডাক্ট পরিচালনা করতে ইউজারনেম এবং পাসওয়ার্ড দিয়ে লগইন করুন।
+                </p>
+              </div>
+            </div>
+
+            {/* Error Banner */}
+            {loginError && (
+              <div className="bg-red-950/80 border border-red-700/80 text-red-200 text-xs font-bold p-3.5 rounded-xl flex items-start gap-2.5 animate-shake">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <span>{loginError}</span>
+              </div>
+            )}
+
+            {/* Login Form */}
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+              {/* Username / Email Field */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                  <User className="w-3.5 h-3.5 text-slate-400" />
+                  <span>ইউজারনেম বা ইমেইল (Username / Email)</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    placeholder="যেমন: admin@sajghor.com বা admin"
+                    value={inputUsername}
+                    onChange={(e) => setInputUsername(e.target.value)}
+                    className="w-full bg-slate-900/90 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white placeholder-slate-500 font-medium focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Password Field */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="block text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <Lock className="w-3.5 h-3.5 text-slate-400" />
+                    <span>পাসওয়ার্ড (Password)</span>
+                  </label>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showLoginPassword ? 'text' : 'password'}
+                    required
+                    placeholder="পাসওয়ার্ড লিখুন..."
+                    value={inputPassword}
+                    onChange={(e) => setInputPassword(e.target.value)}
+                    className="w-full bg-slate-900/90 border border-slate-700 rounded-xl pl-4 pr-11 py-3 text-sm text-white placeholder-slate-500 font-medium focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500/20 transition-all"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 p-1 transition-colors"
+                    title={showLoginPassword ? 'পাসওয়ার্ড লুকান' : 'পাসওয়ার্ড দেখুন'}
+                  >
+                    {showLoginPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoggingIn}
+                className="w-full py-3.5 px-4 rounded-xl text-white font-black text-sm tracking-wide transition-all shadow-lg flex items-center justify-center gap-2 active:scale-[0.98] disabled:opacity-70 cursor-pointer mt-2"
+                style={{ backgroundColor: store.branding.primaryColor || '#DC2626' }}
+              >
+                {isLoggingIn ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <span>যাচাই করা হচ্ছে...</span>
+                  </>
+                ) : (
+                  <>
+                    <KeyRound className="w-4 h-4" />
+                    <span>লগইন করুন (Enter Admin Panel)</span>
+                  </>
+                )}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {/* Footer info */}
+        <div className="text-center text-xs text-slate-500 pb-2">
+          <span>নিরাপদ ই-কমার্স অ্যাডমিন প্যানেল • © {store.branding.storeName}</span>
+        </div>
+      </div>
+    );
+  }
+
+  // -------------------------------------------------------------
+  // 2. AUTHENTICATED ADMIN DASHBOARD
+  // -------------------------------------------------------------
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans pb-16">
       {/* Top White Client Admin Header */}
@@ -322,8 +567,11 @@ export const ClientAdmin: React.FC<Props> = ({
             </button>
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase tracking-wider text-red-700 bg-red-50 border border-red-200 px-2.5 py-0.5 rounded-full">
-                  Client Admin Portal
+                <span
+                  className="text-[10px] font-black uppercase tracking-wider text-white px-2.5 py-0.5 rounded-full shadow-2xs"
+                  style={{ backgroundColor: store.branding.primaryColor || '#DC2626' }}
+                >
+                  Admin Portal
                 </span>
                 <span className="text-xs text-slate-500 font-mono hidden sm:inline">
                   {store.branding.subdomain}.yourdomain.com
@@ -336,12 +584,30 @@ export const ClientAdmin: React.FC<Props> = ({
           </div>
 
           <div className="flex items-center gap-2">
+            {/* User Profile Pill */}
+            <div className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700">
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <User className="w-3.5 h-3.5 text-slate-500" />
+              <span className="max-w-[140px] truncate">{store.clientEmail || 'Admin'}</span>
+            </div>
+
+            {/* Live Storefront Button */}
             <button
               onClick={onBackToStorefront}
-              className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-2 shadow-xs active:scale-95"
+              className="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs active:scale-95"
             >
-              <Eye className="w-4 h-4" />
+              <Eye className="w-4 h-4 text-slate-600" />
               <span>Live Storefront</span>
+            </button>
+
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="px-3.5 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs active:scale-95"
+              title="অ্যাডমিন থেকে লগআউট করুন"
+            >
+              <LogOut className="w-4 h-4 text-red-600" />
+              <span>লগআউট</span>
             </button>
           </div>
         </div>
@@ -382,14 +648,17 @@ export const ClientAdmin: React.FC<Props> = ({
         </div>
 
         {/* Tab Selection */}
-        <div className="bg-white rounded-2xl border border-slate-200 p-1.5 flex gap-2 shadow-xs">
+        <div className="bg-white rounded-2xl border border-slate-200 p-1.5 flex flex-wrap gap-2 shadow-xs">
           <button
             onClick={() => setActiveTab('orders')}
-            className={`flex-1 py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+            className={`flex-1 min-w-[120px] py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
               activeTab === 'orders'
-                ? 'bg-red-600 text-white shadow-xs'
+                ? 'text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
             }`}
+            style={{
+              backgroundColor: activeTab === 'orders' ? (store.branding.primaryColor || '#DC2626') : undefined,
+            }}
           >
             <ShoppingBag className="w-4 h-4" />
             <span>অর্ডারসমূহ ({store.orders.length})</span>
@@ -402,16 +671,142 @@ export const ClientAdmin: React.FC<Props> = ({
 
           <button
             onClick={() => setActiveTab('products')}
-            className={`flex-1 py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+            className={`flex-1 min-w-[120px] py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
               activeTab === 'products'
-                ? 'bg-red-600 text-white shadow-xs'
+                ? 'text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
             }`}
+            style={{
+              backgroundColor: activeTab === 'products' ? (store.branding.primaryColor || '#DC2626') : undefined,
+            }}
           >
             <Package className="w-4 h-4" />
             <span>প্রোডাক্ট ক্যাটালগ ({store.products.length})</span>
           </button>
+
+          <button
+            onClick={() => setActiveTab('security')}
+            className={`flex-1 min-w-[120px] py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+              activeTab === 'security'
+                ? 'text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+            style={{
+              backgroundColor: activeTab === 'security' ? (store.branding.primaryColor || '#DC2626') : undefined,
+            }}
+          >
+            <Shield className="w-4 h-4" />
+            <span>লগইন ও পাসওয়ার্ড সেটিংস</span>
+          </button>
         </div>
+
+        {/* SECURITY & PASSWORDS TAB CONTENT */}
+        {activeTab === 'security' && (
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6 max-w-2xl mx-auto">
+            <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-white"
+                style={{ backgroundColor: store.branding.primaryColor || '#DC2626' }}
+              >
+                <KeyRound className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-black text-slate-900">
+                  অ্যাডমিন ইউজারনেম ও পাসওয়ার্ড পরিবর্তন
+                </h3>
+                <p className="text-xs text-slate-500">
+                  আপনার অ্যাডমিন প্যানেলের সিকিউরিটি বাড়াতে ইউজারনেম বা পাসওয়ার্ড পরিবর্তন করুন।
+                </p>
+              </div>
+            </div>
+
+            {secSuccessMsg && (
+              <div className="bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold p-4 rounded-2xl flex items-center gap-2.5 animate-in fade-in">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                <span>অ্যাডমিন ইউজারনেম ও পাসওয়ার্ড সফলভাবে আপডেট করা হয়েছে!</span>
+              </div>
+            )}
+
+            {secErrorMsg && (
+              <div className="bg-red-50 border border-red-300 text-red-800 text-xs font-bold p-4 rounded-2xl flex items-center gap-2.5 animate-in fade-in">
+                <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+                <span>{secErrorMsg}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveSecuritySettings} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  অ্যাডমিন ইউজারনেম / ইমেইল (Username or Email) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={secEmail}
+                  onChange={(e) => setSecEmail(e.target.value)}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 font-bold focus:outline-none focus:border-red-500 focus:bg-white transition-all"
+                />
+                <span className="text-[11px] text-slate-400 mt-1 block">
+                  লগইন করার সময় এই ইউজারনেম বা ইমেইল ব্যবহার করবেন।
+                </span>
+              </div>
+
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-bold text-slate-700">
+                      নতুন পাসওয়ার্ড (New Password) *
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowSecPassword(!showSecPassword)}
+                      className="text-[11px] font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1"
+                    >
+                      {showSecPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      <span>{showSecPassword ? 'লুকান' : 'দেখুন'}</span>
+                    </button>
+                  </div>
+                  <input
+                    type={showSecPassword ? 'text' : 'password'}
+                    required
+                    value={secPassword}
+                    onChange={(e) => setSecPassword(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 font-bold focus:outline-none focus:border-red-500 focus:bg-white transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                    কনফার্ম পাসওয়ার্ড (Confirm Password) *
+                  </label>
+                  <input
+                    type={showSecPassword ? 'text' : 'password'}
+                    required
+                    value={secConfirmPassword}
+                    onChange={(e) => setSecConfirmPassword(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 font-bold focus:outline-none focus:border-red-500 focus:bg-white transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-xs space-y-1 text-slate-600">
+                <span className="font-bold block text-slate-800">💡 তথ্য মনে রাখুন:</span>
+                <p>পাসওয়ার্ড পরিবর্তনের পর পরবর্তী লগইনের সময় নতুন পাসওয়ার্ডটি প্রদান করতে হবে।</p>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="submit"
+                  className="px-6 py-3 rounded-xl text-white font-black text-xs sm:text-sm transition-all shadow-xs active:scale-95 flex items-center gap-2 cursor-pointer"
+                  style={{ backgroundColor: store.branding.primaryColor || '#DC2626' }}
+                >
+                  <Save className="w-4 h-4" />
+                  <span>পাসওয়ার্ড ও ইউজারনেম সেভ করুন</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* ORDERS TAB CONTENT */}
         {activeTab === 'orders' && (

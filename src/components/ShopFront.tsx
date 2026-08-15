@@ -22,6 +22,7 @@ import {
   Phone,
   Star,
   Image as ImageIcon,
+  Lock,
 } from 'lucide-react';
 import { Product, Store, CartItem } from '../types';
 import { ProductDetailView } from './ProductDetailView';
@@ -33,6 +34,7 @@ interface Props {
   cart: CartItem[];
   onAddToCart: (product: Product, quantity: number, selectedColor: string) => void;
   onOpenCart: () => void;
+  onOpenClientAdmin?: () => void;
 }
 
 export const ShopFront: React.FC<Props> = ({
@@ -40,6 +42,7 @@ export const ShopFront: React.FC<Props> = ({
   cart,
   onAddToCart,
   onOpenCart,
+  onOpenClientAdmin,
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -355,8 +358,8 @@ export const ShopFront: React.FC<Props> = ({
               </nav>
             </div>
 
-            {branding.contactPhone && (
-              <div className="pt-4 border-t border-gray-100">
+            <div className="pt-4 border-t border-gray-100 space-y-2">
+              {branding.contactPhone && (
                 <a
                   href={`tel:${branding.contactPhone}`}
                   className="w-full py-2.5 px-3.5 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2 border"
@@ -369,8 +372,21 @@ export const ShopFront: React.FC<Props> = ({
                   <Phone className="w-4 h-4" style={{ color: primaryColor }} />
                   <span>হটলাইন: {branding.contactPhone}</span>
                 </a>
-              </div>
-            )}
+              )}
+
+              {onOpenClientAdmin && (
+                <button
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onOpenClientAdmin();
+                  }}
+                  className="w-full py-2.5 px-3.5 rounded-lg text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 transition-colors flex items-center justify-center gap-2 border border-slate-200"
+                >
+                  <Lock className="w-3.5 h-3.5 text-slate-500" />
+                  <span>অ্যাডমিন প্যানেল লগইন</span>
+                </button>
+              )}
+            </div>
           </div>
           <div className="flex-1" onClick={() => setIsMenuOpen(false)} />
         </div>
@@ -555,6 +571,7 @@ export const ShopFront: React.FC<Props> = ({
           setSelectedCategory(cat);
           window.scrollTo({ top: 400, behavior: 'smooth' });
         }}
+        onOpenClientAdmin={onOpenClientAdmin}
       />
 
       {/* Persistent Floating WhatsApp Button */}

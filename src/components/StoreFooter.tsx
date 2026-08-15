@@ -8,6 +8,7 @@ import {
   MessageCircle,
   ExternalLink,
   MapPin,
+  Lock,
 } from 'lucide-react';
 import { StoreBranding, Category } from '../types';
 
@@ -15,12 +16,14 @@ interface StoreFooterProps {
   branding: StoreBranding;
   categories: Category[];
   onSelectCategory?: (categoryName: string) => void;
+  onOpenClientAdmin?: () => void;
 }
 
 export const StoreFooter: React.FC<StoreFooterProps> = ({
   branding,
   categories,
   onSelectCategory,
+  onOpenClientAdmin,
 }) => {
   const currentYear = new Date().getFullYear();
   const primaryColor = branding.primaryColor || '#DC2626';
@@ -238,12 +241,25 @@ export const StoreFooter: React.FC<StoreFooterProps> = ({
           <p className="font-medium text-[11px] text-slate-400">
             © {currentYear} <span className="font-bold text-slate-200">{branding.storeName}</span>. সর্বস্বত্ব সংরক্ষিত।
           </p>
-          <div className="flex items-center gap-4 text-[11px] font-medium text-slate-400">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 text-[11px] font-medium text-slate-400">
             <span>ক্যাশ অন ডেলিভারি</span>
             <span>•</span>
             <span>নিরাপদ শপিং</span>
             <span>•</span>
             <span>প্রাইভেসি ও পলিসি</span>
+            {onOpenClientAdmin && (
+              <>
+                <span>•</span>
+                <button
+                  onClick={onOpenClientAdmin}
+                  className="hover:text-slate-200 flex items-center gap-1 text-[11px] text-slate-400 underline transition-colors cursor-pointer"
+                  title="দোকানের অ্যাডমিন লগইন"
+                >
+                  <Lock className="w-3 h-3 text-slate-400" />
+                  <span>অ্যাডমিন লগইন</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
