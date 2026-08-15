@@ -151,15 +151,22 @@ export const StoreFooter: React.FC<StoreFooterProps> = ({
               {branding.contactPhone ? (
                 <a
                   href={phoneHref}
-                  className="flex items-start gap-3 p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-900 border border-slate-800 hover:border-red-500/60 text-slate-200 hover:text-red-400 transition-all group shadow-2xs"
+                  className="flex items-start gap-3 p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-900 border border-slate-800 transition-all group shadow-2xs"
                   title="সরাসরি কল করতে ক্লিক করুন"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-red-950 text-red-400 border border-red-900/60 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
-                    <Phone className="w-4 h-4" />
+                  <div
+                    className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform"
+                    style={{
+                      backgroundColor: `${primaryColor}20`,
+                      color: primaryColor,
+                      border: `1px solid ${primaryColor}40`,
+                    }}
+                  >
+                    <Phone className="w-4 h-4" style={{ color: primaryColor }} />
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-bold block">কল করুন (সকাল ৯টা - রাত ১১টা):</span>
-                    <span className="font-black text-sm text-white group-hover:text-red-400">{branding.contactPhone}</span>
+                    <span className="font-black text-sm text-white" style={{ color: primaryColor }}>{branding.contactPhone}</span>
                   </div>
                 </a>
               ) : null}
@@ -168,7 +175,7 @@ export const StoreFooter: React.FC<StoreFooterProps> = ({
               {branding.contactEmail ? (
                 <a
                   href={emailHref}
-                  className="flex items-start gap-3 p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-900 border border-slate-800 hover:border-red-500/60 text-slate-200 hover:text-red-400 transition-all group shadow-2xs"
+                  className="flex items-start gap-3 p-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-900 border border-slate-800 transition-all group shadow-2xs"
                   title="ইমেইল পাঠাতে ক্লিক করুন"
                 >
                   <div className="w-8 h-8 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
@@ -176,7 +183,7 @@ export const StoreFooter: React.FC<StoreFooterProps> = ({
                   </div>
                   <div>
                     <span className="text-[10px] text-slate-400 font-bold block">অফিসিয়াল ইমেইল:</span>
-                    <span className="font-bold text-xs text-slate-200 group-hover:text-red-400 break-all">{branding.contactEmail}</span>
+                    <span className="font-bold text-xs text-slate-200 break-all">{branding.contactEmail}</span>
                   </div>
                 </a>
               ) : null}
@@ -204,9 +211,9 @@ export const StoreFooter: React.FC<StoreFooterProps> = ({
                 <li key={cat.id}>
                   <button
                     onClick={() => onSelectCategory && onSelectCategory(cat.name)}
-                    className="text-slate-300 hover:text-red-400 hover:underline flex items-center gap-1.5 font-medium transition-colors"
+                    className="text-slate-300 hover:text-white hover:underline flex items-center gap-1.5 font-medium transition-colors"
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: primaryColor }}></span>
                     <span>{cat.name} কালেকশন</span>
                   </button>
                 </li>
@@ -214,9 +221,9 @@ export const StoreFooter: React.FC<StoreFooterProps> = ({
               <li>
                 <button
                   onClick={() => onSelectCategory && onSelectCategory('All')}
-                  className="text-slate-300 hover:text-red-400 hover:underline flex items-center gap-1.5 font-medium transition-colors"
+                  className="text-slate-300 hover:text-white hover:underline flex items-center gap-1.5 font-medium transition-colors"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: primaryColor }}></span>
                   <span>সকল প্রোডাক্ট দেখুন</span>
                 </button>
               </li>

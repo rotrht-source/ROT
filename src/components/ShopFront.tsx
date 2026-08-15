@@ -95,21 +95,37 @@ export const ShopFront: React.FC<Props> = ({
   }
 
   return (
-    <div className="bg-slate-50 min-h-screen text-gray-900 pb-20 font-sans selection:bg-red-100">
-      {/* Top Announcement Bar */}
-      <div className="bg-red-50 text-red-950 px-4 py-2 text-xs font-medium flex items-center justify-between border-b border-red-200">
+    <div className="bg-slate-50 min-h-screen text-gray-900 font-sans flex flex-col justify-between">
+      <div className="flex-1 flex flex-col">
+        {/* Top Announcement Bar - Dynamically adapts to store primaryColor */}
+        <div
+          className="px-4 py-2 text-xs font-medium flex items-center justify-between border-b transition-colors"
+          style={{
+            backgroundColor: `${primaryColor}12`,
+            borderColor: `${primaryColor}28`,
+          }}
+        >
         <div className="flex items-center gap-2 truncate max-w-[70%] sm:max-w-none">
-          <span className="bg-red-600 text-white font-bold px-2 py-0.5 text-[10px] rounded-md uppercase tracking-wide shrink-0">
+          <span
+            className="text-white font-black px-2 py-0.5 text-[10px] rounded-md uppercase tracking-wide shrink-0 shadow-2xs"
+            style={{ backgroundColor: primaryColor }}
+          >
             অফার
           </span>
-          <span className="truncate text-red-900 font-semibold">{branding.announcementText || '🔥 ক্যাশ অন ডেলিভারিতে কেনাকাটা করুন!'}</span>
+          <span className="truncate font-bold" style={{ color: primaryColor }}>
+            {branding.announcementText || '🔥 ক্যাশ অন ডেলিভারিতে কেনাকাটা করুন!'}
+          </span>
         </div>
         {branding.contactPhone && (
           <a
             href={`tel:${branding.contactPhone}`}
-            className="flex items-center gap-1.5 font-bold text-red-700 hover:text-red-800 shrink-0 ml-2 bg-white hover:bg-red-100 px-3 py-1 rounded-full transition-colors text-xs border border-red-200 shadow-2xs"
+            className="flex items-center gap-1.5 font-bold shrink-0 ml-2 bg-white hover:opacity-90 px-3 py-1 rounded-full transition-all text-xs border shadow-2xs"
+            style={{
+              color: primaryColor,
+              borderColor: `${primaryColor}40`,
+            }}
           >
-            <Phone className="w-3.5 h-3.5 text-red-600" />
+            <Phone className="w-3.5 h-3.5" style={{ color: primaryColor }} />
             <span>{branding.contactPhone}</span>
           </a>
         )}
@@ -158,7 +174,11 @@ export const ShopFront: React.FC<Props> = ({
                 }}
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
-                className="w-full bg-gray-50 hover:bg-white border border-gray-200 text-gray-900 placeholder-gray-400 pl-8 sm:pl-9 pr-7 py-1.5 sm:py-2 text-xs rounded-md focus:outline-none focus:border-red-500 focus:ring-1 focus:ring-red-100 transition-all font-medium"
+                className="w-full bg-gray-50 hover:bg-white border border-gray-200 text-gray-900 placeholder-gray-400 pl-8 sm:pl-9 pr-7 py-1.5 sm:py-2 text-xs rounded-md focus:outline-none transition-all font-medium"
+                style={{
+                  borderColor: isSearchFocused ? primaryColor : undefined,
+                  boxShadow: isSearchFocused ? `0 0 0 2px ${primaryColor}25` : undefined,
+                }}
               />
               {searchQuery && (
                 <button
@@ -191,7 +211,7 @@ export const ShopFront: React.FC<Props> = ({
                         setSearchQuery('');
                         setIsSearchFocused(false);
                       }}
-                      className="w-full text-left p-2.5 flex items-center gap-3 hover:bg-red-50/50 transition-colors group"
+                      className="w-full text-left p-2.5 flex items-center gap-3 hover:bg-slate-50 transition-colors group"
                     >
                       <img
                         src={prod.mainImage}
@@ -199,7 +219,7 @@ export const ShopFront: React.FC<Props> = ({
                         className="w-10 h-10 object-cover rounded-md border border-gray-100 shrink-0"
                       />
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-gray-900 group-hover:text-red-600 truncate transition-colors">
+                        <p className="text-xs font-bold text-gray-900 truncate transition-colors">
                           {prod.title}
                         </p>
                         <div className="flex items-center gap-2 mt-0.5">
@@ -215,7 +235,7 @@ export const ShopFront: React.FC<Props> = ({
                           )}
                         </div>
                       </div>
-                      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-red-600 shrink-0" />
+                      <ChevronRight className="w-4 h-4 text-gray-300 group-hover:opacity-100 shrink-0" style={{ color: primaryColor }} />
                     </button>
                   ))
                 ) : (
@@ -234,10 +254,15 @@ export const ShopFront: React.FC<Props> = ({
             {branding.contactPhone && (
               <a
                 href={`tel:${branding.contactPhone}`}
-                className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 rounded-md text-xs font-bold border border-emerald-200 transition-colors shrink-0"
+                className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-bold border transition-colors shrink-0"
+                style={{
+                  backgroundColor: `${primaryColor}10`,
+                  color: primaryColor,
+                  borderColor: `${primaryColor}30`,
+                }}
                 title="অর্ডারের জন্য কল করুন"
               >
-                <Phone className="w-3.5 h-3.5 text-emerald-600" />
+                <Phone className="w-3.5 h-3.5" style={{ color: primaryColor }} />
                 <span>{branding.contactPhone}</span>
               </a>
             )}
@@ -295,27 +320,38 @@ export const ShopFront: React.FC<Props> = ({
                     setIsMenuOpen(false);
                   }}
                   className={`w-full text-left py-2.5 px-3.5 rounded-md transition-colors flex items-center justify-between ${
-                    selectedCategory === 'All' ? 'bg-red-50 text-red-600 font-black' : 'hover:bg-gray-50'
+                    selectedCategory === 'All' ? 'font-black' : 'hover:bg-gray-50 text-gray-700'
                   }`}
+                  style={{
+                    backgroundColor: selectedCategory === 'All' ? `${primaryColor}15` : undefined,
+                    color: selectedCategory === 'All' ? primaryColor : undefined,
+                  }}
                 >
                   <span>সব প্রোডাক্ট (Homepage)</span>
                   <ChevronRight className="w-4 h-4 opacity-50" />
                 </button>
-                {store.categories.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => {
-                      setSelectedCategory(c.name);
-                      setIsMenuOpen(false);
-                    }}
-                    className={`w-full text-left py-2.5 px-3.5 rounded-md transition-colors flex items-center justify-between ${
-                      selectedCategory.toLowerCase() === c.name.toLowerCase() ? 'bg-red-50 text-red-600 font-black' : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <span>{c.name}</span>
-                    <ChevronRight className="w-4 h-4 opacity-50" />
-                  </button>
-                ))}
+                {store.categories.map((c) => {
+                  const isCatSelected = selectedCategory.toLowerCase() === c.name.toLowerCase();
+                  return (
+                    <button
+                      key={c.id}
+                      onClick={() => {
+                        setSelectedCategory(c.name);
+                        setIsMenuOpen(false);
+                      }}
+                      className={`w-full text-left py-2.5 px-3.5 rounded-md transition-colors flex items-center justify-between ${
+                        isCatSelected ? 'font-black' : 'hover:bg-gray-50 text-gray-700'
+                      }`}
+                      style={{
+                        backgroundColor: isCatSelected ? `${primaryColor}15` : undefined,
+                        color: isCatSelected ? primaryColor : undefined,
+                      }}
+                    >
+                      <span>{c.name}</span>
+                      <ChevronRight className="w-4 h-4 opacity-50" />
+                    </button>
+                  );
+                })}
               </nav>
             </div>
 
@@ -323,9 +359,14 @@ export const ShopFront: React.FC<Props> = ({
               <div className="pt-4 border-t border-gray-100">
                 <a
                   href={`tel:${branding.contactPhone}`}
-                  className="w-full py-2.5 px-3.5 bg-emerald-50 text-emerald-800 rounded-lg text-xs font-bold hover:bg-emerald-100 transition-colors flex items-center justify-center gap-2 border border-emerald-200"
+                  className="w-full py-2.5 px-3.5 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-2 border"
+                  style={{
+                    backgroundColor: `${primaryColor}10`,
+                    color: primaryColor,
+                    borderColor: `${primaryColor}30`,
+                  }}
                 >
-                  <Phone className="w-4 h-4 text-emerald-600" />
+                  <Phone className="w-4 h-4" style={{ color: primaryColor }} />
                   <span>হটলাইন: {branding.contactPhone}</span>
                 </a>
               </div>
@@ -351,16 +392,20 @@ export const ShopFront: React.FC<Props> = ({
       )}
 
       {/* Categories & Products Section - Directly After Banner */}
-      <section id="all-products-section" className="px-4 py-3 max-w-3xl mx-auto space-y-3">
+      <section id="all-products-section" className="px-4 py-3 pb-12 max-w-3xl mx-auto space-y-3 w-full">
         {/* Horizontal Category Navigation Bar */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-gray-200/80 pt-1">
           <button
             onClick={() => setSelectedCategory('All')}
             className={`px-4 py-2 rounded-lg text-xs font-black whitespace-nowrap transition-all border ${
               selectedCategory === 'All'
-                ? 'bg-red-600 text-white border-red-600 shadow-xs scale-105'
+                ? 'text-white shadow-xs scale-105'
                 : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200'
             }`}
+            style={{
+              backgroundColor: selectedCategory === 'All' ? primaryColor : undefined,
+              borderColor: selectedCategory === 'All' ? primaryColor : undefined,
+            }}
           >
             সব প্রোডাক্ট ({store.products.length})
           </button>
@@ -372,11 +417,12 @@ export const ShopFront: React.FC<Props> = ({
                 onClick={() => setSelectedCategory(cat.name)}
                 className={`px-4 py-2 rounded-lg text-xs font-black whitespace-nowrap transition-all border ${
                   isSelected
-                    ? 'text-white border-transparent shadow-xs scale-105'
+                    ? 'text-white shadow-xs scale-105'
                     : 'bg-white text-gray-700 hover:bg-gray-50 border-gray-200'
                 }`}
                 style={{
                   backgroundColor: isSelected ? primaryColor : undefined,
+                  borderColor: isSelected ? primaryColor : undefined,
                 }}
               >
                 {cat.name}
@@ -499,6 +545,7 @@ export const ShopFront: React.FC<Props> = ({
           ))}
         </div>
       </section>
+      </div>
 
       {/* Store Footer with Social Links & Contact Details */}
       <StoreFooter

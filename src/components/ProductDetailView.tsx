@@ -111,7 +111,10 @@ export const ProductDetailView: React.FC<Props> = ({
       <div className="relative bg-white border-b border-gray-100 overflow-hidden">
         {/* Discount Badge */}
         {product.discountPercentage > 0 && (
-          <div className="absolute top-4 left-4 z-10 bg-red-600 text-white font-black text-xs px-2.5 py-1 rounded-md shadow-xs">
+          <div
+            className="absolute top-4 left-4 z-10 text-white font-black text-xs px-2.5 py-1 rounded-md shadow-xs"
+            style={{ backgroundColor: primaryColor }}
+          >
             -{product.discountPercentage}%
           </div>
         )}
@@ -123,9 +126,11 @@ export const ProductDetailView: React.FC<Props> = ({
           aria-label="Add to wishlist"
         >
           <Heart
-            className={`w-5 h-5 transition-colors ${
-              isWishlisted ? 'fill-red-500 text-red-500' : 'text-gray-400'
-            }`}
+            className="w-5 h-5 transition-colors"
+            style={{
+              color: isWishlisted ? primaryColor : '#9CA3AF',
+              fill: isWishlisted ? primaryColor : 'none',
+            }}
           />
         </button>
 
@@ -170,7 +175,7 @@ export const ProductDetailView: React.FC<Props> = ({
       {images.length > 1 && (
         <div className="px-4 py-3 bg-white border-b border-gray-200">
           <div className="flex items-center gap-1.5 mb-2 text-xs font-bold text-gray-700">
-            <ImageIcon className="w-4 h-4 text-red-600" />
+            <ImageIcon className="w-4 h-4" style={{ color: primaryColor }} />
             <span>প্রোডাক্টের অন্যান্য ছবি ({images.length}টি):</span>
           </div>
           <div className="flex items-center gap-2.5 overflow-x-auto pb-1 scrollbar-none">
@@ -180,9 +185,13 @@ export const ProductDetailView: React.FC<Props> = ({
                 onClick={() => setSelectedImageIndex(idx)}
                 className={`relative w-16 aspect-[9/16] rounded-md overflow-hidden border-2 transition-all shrink-0 bg-gray-100 ${
                   selectedImageIndex === idx
-                    ? 'border-red-600 ring-2 ring-red-200 scale-105 shadow-sm'
+                    ? 'scale-105 shadow-sm'
                     : 'border-gray-200 hover:border-gray-400 opacity-70 hover:opacity-100'
                 }`}
+                style={{
+                  borderColor: selectedImageIndex === idx ? primaryColor : undefined,
+                  boxShadow: selectedImageIndex === idx ? `0 0 0 2px ${primaryColor}35` : undefined,
+                }}
               >
                 <img
                   src={imgUrl}
@@ -312,16 +321,21 @@ export const ProductDetailView: React.FC<Props> = ({
             {/* Add to Cart Button */}
             <button
               onClick={handleAddToCart}
-              className="flex-1 h-11 bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 font-bold rounded-md active:scale-[0.99] transition-all flex items-center justify-center gap-2 text-xs sm:text-sm shadow-2xs"
+              className="flex-1 h-11 border font-bold rounded-md active:scale-[0.99] transition-all flex items-center justify-center gap-2 text-xs sm:text-sm shadow-2xs hover:opacity-90"
+              style={{
+                backgroundColor: `${primaryColor}15`,
+                borderColor: `${primaryColor}40`,
+                color: primaryColor,
+              }}
             >
               {addedAnimation ? (
                 <>
                   <Check className="w-4 h-4 text-emerald-600" />
-                  <span>কার্টে যোগ হয়েছে!</span>
+                  <span className="text-emerald-700">কার্টে যোগ হয়েছে!</span>
                 </>
               ) : (
                 <>
-                  <ShoppingBag className="w-4 h-4 text-red-600" />
+                  <ShoppingBag className="w-4 h-4" style={{ color: primaryColor }} />
                   <span>কার্টে রাখুন</span>
                 </>
               )}
