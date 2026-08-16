@@ -10,24 +10,24 @@ import {
   getDocs,
 } from 'firebase/firestore';
 
-const STORAGE_KEY = 'ecom_foundation_stores_v2';
-const STORES_COLLECTION = 'stores';
+const STORAGE_KEY = 'ecom_foundation_stores_v5';
+const STORES_COLLECTION = 'stores_v5';
 
 const DEFAULT_BRANDING: StoreBranding = {
-  storeName: 'Sajghor',
-  subdomain: 'sajghor',
-  logoText: 'Sajghor',
-  primaryColor: '#DC2626',
-  secondaryColor: '#EF4444',
+  storeName: 'জারা ফ্যাশন (Zara Fashion BD)',
+  subdomain: 'zarafashion',
+  logoText: 'জারা ফ্যাশন',
+  primaryColor: '#BE123C',
+  secondaryColor: '#E11D48',
   currencySymbol: '৳',
   announcementText: '✨ স্পেশাল অফার! ক্যাশ অন ডেলিভারি সুবিধা!',
-  heroBannerTitle: 'এক্সক্লুসিভ কালেকশন',
+  heroBannerTitle: 'প্রিমিয়াম ফ্যাশন কালেকশন',
   heroBannerSubtitle: 'সেরা মানের পণ্য ও দ্রুত ডেলিভারি',
   heroBannerDiscount: 'স্পেশাল কালেকশন',
   heroBannerImage: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=800&q=80',
   freeShippingThreshold: 1000,
   contactPhone: '+880 1711-889900',
-  contactEmail: 'contact@sajghor.com',
+  contactEmail: 'contact@zarafashion.com',
   whatsappNumber: '+880 1711-889900',
 };
 
@@ -119,16 +119,33 @@ export function getStores(): Store[] {
     const parsed = JSON.parse(saved);
     if (Array.isArray(parsed) && parsed.length > 0) {
       const normalized = parsed.map(normalizeStore);
-      const hasSajghor = normalized.some((s) => s.id === 'sajghor');
-      if (!hasSajghor) {
-        const sajghor = INITIAL_STORES.find((s) => s.id === 'sajghor');
-        if (sajghor) {
-          const updated = [normalizeStore(sajghor), ...normalized];
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-          return updated;
+      
+      // Ensure all 5 template stores exist
+      let updated = [...normalized];
+      let hasChanges = false;
+      INITIAL_STORES.forEach((initialStore) => {
+        const existingIdx = updated.findIndex((s) => s.id === initialStore.id);
+        if (existingIdx === -1) {
+          updated.push(normalizeStore(initialStore));
+          hasChanges = true;
+        } else if (!updated[existingIdx].branding.logoUrl || updated[existingIdx].products.length < 10) {
+          // Upgrade with rich products and logo
+          updated[existingIdx] = {
+            ...updated[existingIdx],
+            branding: {
+              ...updated[existingIdx].branding,
+              logoUrl: initialStore.branding.logoUrl,
+            },
+            products: initialStore.products,
+          };
+          hasChanges = true;
         }
+      });
+
+      if (hasChanges) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       }
-      return normalized;
+      return updated;
     }
     return INITIAL_STORES.map(normalizeStore);
   } catch (err) {

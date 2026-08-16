@@ -35,6 +35,7 @@ interface Props {
   onAddToCart: (product: Product, quantity: number, selectedColor: string) => void;
   onOpenCart: () => void;
   onOpenClientAdmin?: () => void;
+  onBackToAgency?: () => void;
 }
 
 export const ShopFront: React.FC<Props> = ({
@@ -43,6 +44,7 @@ export const ShopFront: React.FC<Props> = ({
   onAddToCart,
   onOpenCart,
   onOpenClientAdmin,
+  onBackToAgency,
 }) => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -100,6 +102,32 @@ export const ShopFront: React.FC<Props> = ({
   return (
     <div className="bg-slate-50 min-h-screen text-gray-900 font-sans flex flex-col justify-between">
       <div className="flex-1 flex flex-col">
+        {/* Demo Preview Header Bar */}
+        {onBackToAgency && (
+          <div className="bg-zinc-950 text-white px-3 py-2 text-xs flex items-center justify-between gap-2 border-b border-zinc-800 shadow-md">
+            <button
+              onClick={onBackToAgency}
+              className="flex items-center gap-1.5 font-bold text-zinc-300 hover:text-white bg-zinc-900 hover:bg-zinc-800 px-3 py-1.5 rounded-lg border border-zinc-700 transition-colors"
+            >
+              <span>← ROT হোমপেজে ফিরুন</span>
+            </button>
+            
+            <div className="flex items-center gap-2">
+              <span className="hidden sm:inline text-red-400 font-bold text-[11px] bg-zinc-900 px-2.5 py-1 rounded-md border border-zinc-700">
+                🔥 মাসিক মাত্র ৫০০ টাকায় ফুল রেডি সাইট
+              </span>
+              <a
+                href={`https://wa.me/8801711889900?text=${encodeURIComponent(`হ্যালো! আমি ROT এর '${branding.storeName}' ডেমো শপ ডিজাইনের মতো একটি ই-কমার্স ওয়েবসাইট অর্ডার করতে চাই (মাসিক ৫০০৳ প্যাকেজ)।`)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 font-black text-white bg-red-600 hover:bg-red-700 px-3.5 py-1.5 rounded-lg transition-all text-xs shadow-sm active:scale-95"
+              >
+                <span>এই ওয়েবসাইট অর্ডার করুন (৫০০৳/মাস)</span>
+              </a>
+            </div>
+          </div>
+        )}
+
         {/* Top Announcement Bar - Dynamically adapts to store primaryColor */}
         <div
           className="px-4 py-2 text-xs font-medium flex items-center justify-between border-b transition-colors"

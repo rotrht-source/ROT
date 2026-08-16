@@ -18,7 +18,7 @@ export interface Product {
   mainImage: string;
   images: string[];
   colors: { name: string; hex: string }[];
-  features: ProductFeature[];
+  features?: (ProductFeature | string)[];
   description: string;
   isFlashDeal?: boolean;
   isBestSelling?: boolean;

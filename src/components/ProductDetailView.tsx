@@ -379,8 +379,24 @@ export const ProductDetailView: React.FC<Props> = ({
             )}
           </button>
           {isDescOpen && (
-            <div className="px-4 pb-4 text-xs sm:text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-3">
-              {product.description}
+            <div className="px-4 pb-4 text-xs sm:text-sm text-gray-600 leading-relaxed border-t border-gray-100 pt-3 space-y-3">
+              <p>{product.description}</p>
+              {Array.isArray(product.features) && product.features.length > 0 && (
+                <div className="pt-2 border-t border-gray-100">
+                  <h4 className="font-bold text-gray-900 mb-2 text-xs uppercase tracking-wider">পণ্যটির বিশেষ বৈশিষ্ট্য:</h4>
+                  <ul className="space-y-1.5">
+                    {product.features.map((feat, idx) => {
+                      const featText = typeof feat === 'string' ? feat : (feat.title ? `${feat.title}: ${feat.subtitle}` : feat.subtitle);
+                      return (
+                        <li key={idx} className="flex items-start gap-2 text-xs sm:text-sm text-gray-700">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0" />
+                          <span>{featText}</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
             </div>
           )}
         </div>

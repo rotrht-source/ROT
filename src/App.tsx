@@ -15,6 +15,7 @@ import { ClientAdmin } from './components/ClientAdmin';
 import { CartDrawer } from './components/CartDrawer';
 import { SubdomainGuideModal } from './components/SubdomainGuideModal';
 import { MasterLockGate } from './components/MasterLockGate';
+import { RotWebAgencyLanding } from './components/RotWebAgencyLanding';
 import { checkMasterAuthentication, logoutMaster } from './utils/masterAuth';
 import {
   parseUrlRoute,
@@ -173,8 +174,12 @@ export default function App() {
       <main className="flex-1 overflow-x-hidden">
         {(viewMode === 'home' || viewMode === 'super_admin') && (
           !isMasterAuthenticated ? (
-            /* Blank White Page for unauthorized visitors */
-            <div className="min-h-screen bg-white w-full" />
+            /* High-conversion agency landing page with 5 demo stores & WhatsApp CTAs */
+            <RotWebAgencyLanding
+              stores={stores}
+              onOpenStorefront={(id) => handleNavigate('storefront', id)}
+              onUnlockMaster={() => setIsMasterAuthenticated(true)}
+            />
           ) : (
             <HomePage
               stores={stores}
@@ -209,6 +214,7 @@ export default function App() {
               onAddToCart={handleAddToCart}
               onOpenCart={() => setIsCartOpen(true)}
               onOpenClientAdmin={() => handleNavigate('client_admin')}
+              onBackToAgency={() => handleNavigate('home')}
             />
           </div>
         )}
