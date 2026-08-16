@@ -32,6 +32,17 @@ import {
   Shield,
   Save,
   HelpCircle,
+  Palette,
+  Facebook,
+  Youtube,
+  Instagram,
+  MessageCircle,
+  ExternalLink,
+  Link2,
+  Globe,
+  Share2,
+  Check,
+  Layers,
 } from 'lucide-react';
 import { Store, Product, Order } from '../types';
 import { compressImage } from '../utils/imageCompressor';
@@ -65,18 +76,102 @@ export const ClientAdmin: React.FC<Props> = ({
   const [secSuccessMsg, setSecSuccessMsg] = useState(false);
   const [secErrorMsg, setSecErrorMsg] = useState('');
 
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'security'>('orders');
+  // Branding & Social Media tab state
+  const [bStoreName, setBStoreName] = useState(store.branding.storeName || '');
+  const [bLogoUrl, setBLogoUrl] = useState(store.branding.logoUrl || '');
+  const [bLogoText, setBLogoText] = useState(store.branding.logoText || '');
+  const [bPrimaryColor, setBPrimaryColor] = useState(store.branding.primaryColor || '#DC2626');
+  const [bWhatsappNumber, setBWhatsappNumber] = useState(store.branding.whatsappNumber || store.branding.contactPhone || '');
+  const [bContactPhone, setBContactPhone] = useState(store.branding.contactPhone || '');
+  const [bContactEmail, setBContactEmail] = useState(store.branding.contactEmail || '');
+  const [bAnnouncementText, setBAnnouncementText] = useState(store.branding.announcementText || '');
+  const [bAboutStore, setBAboutStore] = useState(store.branding.aboutStore || '');
+  const [bFacebookUrl, setBFacebookUrl] = useState(store.branding.facebookUrl || '');
+  const [bInstagramUrl, setBInstagramUrl] = useState(store.branding.instagramUrl || '');
+  const [bYoutubeUrl, setBYoutubeUrl] = useState(store.branding.youtubeUrl || '');
+  const [bTiktokUrl, setBTiktokUrl] = useState(store.branding.tiktokUrl || '');
+  const [bHeroBannerTitle, setBHeroBannerTitle] = useState(store.branding.heroBannerTitle || '');
+  const [bHeroBannerSubtitle, setBHeroBannerSubtitle] = useState(store.branding.heroBannerSubtitle || '');
+  const [bHeroBannerImage, setBHeroBannerImage] = useState(store.branding.heroBannerImage || '');
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [brandSuccessMsg, setBrandSuccessMsg] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'branding' | 'security'>('orders');
   const [orderFilter, setOrderFilter] = useState<'All' | Order['status']>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
-  // Sync security form when store changes
+  // Sync security and branding form when store changes
   useEffect(() => {
     setSecEmail(store.clientEmail || `admin@${store.branding.subdomain}.com`);
     setSecPassword(store.clientPassword || 'password123');
     setSecConfirmPassword(store.clientPassword || 'password123');
-  }, [store.id, store.clientEmail, store.clientPassword, store.branding.subdomain]);
+
+    setBStoreName(store.branding.storeName || '');
+    setBLogoUrl(store.branding.logoUrl || '');
+    setBLogoText(store.branding.logoText || '');
+    setBPrimaryColor(store.branding.primaryColor || '#DC2626');
+    setBWhatsappNumber(store.branding.whatsappNumber || store.branding.contactPhone || '');
+    setBContactPhone(store.branding.contactPhone || '');
+    setBContactEmail(store.branding.contactEmail || '');
+    setBAnnouncementText(store.branding.announcementText || '');
+    setBAboutStore(store.branding.aboutStore || '');
+    setBFacebookUrl(store.branding.facebookUrl || '');
+    setBInstagramUrl(store.branding.instagramUrl || '');
+    setBYoutubeUrl(store.branding.youtubeUrl || '');
+    setBTiktokUrl(store.branding.tiktokUrl || '');
+    setBHeroBannerTitle(store.branding.heroBannerTitle || '');
+    setBHeroBannerSubtitle(store.branding.heroBannerSubtitle || '');
+    setBHeroBannerImage(store.branding.heroBannerImage || '');
+  }, [store.id, store.clientEmail, store.clientPassword, store.branding]);
+
+  const handleLogoFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setIsUploadingLogo(true);
+    try {
+      const uploadedUrl = await uploadImageSmart(files[0]);
+      if (uploadedUrl) {
+        setBLogoUrl(uploadedUrl);
+      }
+    } catch (err) {
+      console.error('Failed to upload store logo', err);
+    } finally {
+      setIsUploadingLogo(false);
+    }
+  };
+
+  const handleSaveBrandingSettings = (e: React.FormEvent) => {
+    e.preventDefault();
+    const updatedStore: Store = {
+      ...store,
+      branding: {
+        ...store.branding,
+        storeName: bStoreName.trim() || store.branding.storeName,
+        logoUrl: bLogoUrl.trim(),
+        logoText: bLogoText.trim() || bStoreName.trim(),
+        primaryColor: bPrimaryColor,
+        secondaryColor: bPrimaryColor,
+        whatsappNumber: bWhatsappNumber.trim(),
+        contactPhone: bContactPhone.trim(),
+        contactEmail: bContactEmail.trim(),
+        announcementText: bAnnouncementText.trim(),
+        aboutStore: bAboutStore.trim(),
+        facebookUrl: bFacebookUrl.trim(),
+        instagramUrl: bInstagramUrl.trim(),
+        youtubeUrl: bYoutubeUrl.trim(),
+        tiktokUrl: bTiktokUrl.trim(),
+        heroBannerTitle: bHeroBannerTitle.trim(),
+        heroBannerSubtitle: bHeroBannerSubtitle.trim(),
+        heroBannerImage: bHeroBannerImage.trim() || store.branding.heroBannerImage,
+      },
+    };
+
+    onUpdateStore(updatedStore);
+    setBrandSuccessMsg(true);
+    setTimeout(() => setBrandSuccessMsg(false), 4000);
+  };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -651,7 +746,7 @@ export const ClientAdmin: React.FC<Props> = ({
         <div className="bg-white rounded-2xl border border-slate-200 p-1.5 flex flex-wrap gap-2 shadow-xs">
           <button
             onClick={() => setActiveTab('orders')}
-            className={`flex-1 min-w-[120px] py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+            className={`flex-1 min-w-[120px] py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
               activeTab === 'orders'
                 ? 'text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -671,7 +766,7 @@ export const ClientAdmin: React.FC<Props> = ({
 
           <button
             onClick={() => setActiveTab('products')}
-            className={`flex-1 min-w-[120px] py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+            className={`flex-1 min-w-[120px] py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
               activeTab === 'products'
                 ? 'text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -685,8 +780,23 @@ export const ClientAdmin: React.FC<Props> = ({
           </button>
 
           <button
+            onClick={() => setActiveTab('branding')}
+            className={`flex-1 min-w-[120px] py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
+              activeTab === 'branding'
+                ? 'text-white shadow-xs'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+            style={{
+              backgroundColor: activeTab === 'branding' ? (store.branding.primaryColor || '#DC2626') : undefined,
+            }}
+          >
+            <Palette className="w-4 h-4" />
+            <span>ব্র্যান্ডিং ও সোশ্যাল লিংক</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('security')}
-            className={`flex-1 min-w-[120px] py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all ${
+            className={`flex-1 min-w-[120px] py-3 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer ${
               activeTab === 'security'
                 ? 'text-white shadow-xs'
                 : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
@@ -696,9 +806,461 @@ export const ClientAdmin: React.FC<Props> = ({
             }}
           >
             <Shield className="w-4 h-4" />
-            <span>লগইন ও পাসওয়ার্ড সেটিংস</span>
+            <span>লগইন ও পাসওয়ার্ড</span>
           </button>
         </div>
+
+        {/* BRANDING & SOCIAL MEDIA TAB CONTENT */}
+        {activeTab === 'branding' && (
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-8 max-w-4xl mx-auto">
+            {/* Header */}
+            <div className="flex items-center gap-3.5 border-b border-slate-200 pb-5">
+              <div
+                className="w-11 h-11 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-sm"
+                style={{ backgroundColor: bPrimaryColor }}
+              >
+                <Palette className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base sm:text-lg font-black text-slate-900">
+                  ব্র্যান্ডিং ও সোশ্যাল মিডিয়া সেটিংস
+                </h3>
+                <p className="text-xs text-slate-500">
+                  দোকানের লোগো, হোয়াটসঅ্যাপ নাম্বার, ফেসবুক, ইনস্টাগ্রাম, ইউটিউব ও টিকটক প্রোফাইল লিংক আপডেট করুন।
+                </p>
+              </div>
+            </div>
+
+            {brandSuccessMsg && (
+              <div className="bg-emerald-50 border border-emerald-300 text-emerald-800 text-xs font-bold p-4 rounded-2xl flex items-center gap-2.5 animate-in fade-in">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                <span>ব্র্যান্ডিং ও সোশ্যাল মিডিয়া সেটিংস সফলভাবে আপডেট ও সেভ হয়েছে!</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveBrandingSettings} className="space-y-8">
+              {/* SECTION 1: LOGO & BASIC STORE IDENTITY */}
+              <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 sm:p-6 space-y-5">
+                <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+                  <ImageIcon className="w-4 h-4 text-slate-700" />
+                  <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800">
+                    ১. স্টোর লোগো ও ব্র্যান্ড নাম
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+                  {/* Logo Live Preview */}
+                  <div className="md:col-span-4 bg-white border border-slate-200 rounded-2xl p-4 flex flex-col items-center justify-center text-center space-y-3 shadow-2xs">
+                    <span className="text-[11px] font-bold text-slate-500">লাইভ লোগো প্রিভিউ</span>
+                    <div className="w-full min-h-[110px] bg-slate-950 rounded-xl p-3 flex items-center justify-center border border-slate-800">
+                      {bLogoUrl ? (
+                        <img
+                          src={bLogoUrl}
+                          alt="Store Logo Preview"
+                          className="max-h-16 max-w-full object-contain"
+                        />
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <div
+                            className="w-8 h-8 rounded-lg flex items-center justify-center font-black text-white text-sm"
+                            style={{ backgroundColor: bPrimaryColor }}
+                          >
+                            {bStoreName ? bStoreName.charAt(0).toUpperCase() : 'S'}
+                          </div>
+                          <span className="text-sm font-black text-white truncate max-w-[120px]">
+                            {bStoreName || 'স্টোর নাম'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    {bLogoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setBLogoUrl('')}
+                        className="text-[11px] text-red-600 hover:text-red-700 font-bold hover:underline"
+                      >
+                        লোগো রিমুভ করুন (টেক্সট লোগো ব্যবহার)
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Logo Upload & URL Options */}
+                  <div className="md:col-span-8 space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                        দোকানের নাম (Store Name) *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={bStoreName}
+                        onChange={(e) => setBStoreName(e.target.value)}
+                        placeholder="যেমন: ROT Lifestyle"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 font-bold focus:outline-none focus:border-red-500 transition-all shadow-2xs"
+                      />
+                    </div>
+
+                    {/* File Upload for Logo */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                        ডিভাইস থেকে লোগো আপলোড করুন (Upload Logo)
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <label className="flex-1 border-2 border-dashed border-slate-300 hover:border-slate-400 bg-white rounded-xl p-3 text-center cursor-pointer transition-all flex items-center justify-center gap-2 group">
+                          <Upload className="w-4 h-4 text-slate-400 group-hover:text-slate-700" />
+                          <span className="text-xs font-bold text-slate-600 group-hover:text-slate-900">
+                            {isUploadingLogo ? 'লোগো প্রসেস হচ্ছে...' : 'কম্পিউটার বা মোবাইল থেকে ছবি সিলেক্ট করুন'}
+                          </span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleLogoFileUpload}
+                            disabled={isUploadingLogo}
+                            className="hidden"
+                          />
+                        </label>
+                      </div>
+                      <span className="text-[11px] text-slate-400 mt-1 block">
+                        পিএনজি (PNG), জেপিজি (JPG) বা এসভিজি (SVG) ফাইল সাপোর্টেড।
+                      </span>
+                    </div>
+
+                    {/* Direct Image URL */}
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                        অথবা লোগো ইমেজ URL (Logo Image URL)
+                      </label>
+                      <input
+                        type="url"
+                        value={bLogoUrl}
+                        onChange={(e) => setBLogoUrl(e.target.value)}
+                        placeholder="https://example.com/logo.png"
+                        className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-900 focus:outline-none focus:border-red-500 transition-all font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 2: WHATSAPP & CONTACT DETAILS */}
+              <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 sm:p-6 space-y-5">
+                <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+                  <MessageCircle className="w-4 h-4 text-emerald-600" />
+                  <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800">
+                    ২. হোয়াটসঅ্যাপ ও হেল্পলাইন কন্ট্যাক্ট
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* WhatsApp Number */}
+                  <div className="sm:col-span-2">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                        <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>হোয়াটসঅ্যাপ নাম্বার (WhatsApp Number) *</span>
+                      </label>
+                      {bWhatsappNumber && (
+                        <a
+                          href={`https://wa.me/${bWhatsappNumber.replace(/[^0-9]/g, '').startsWith('0') ? '88' + bWhatsappNumber.replace(/[^0-9]/g, '') : bWhatsappNumber.replace(/[^0-9]/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 hover:underline"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          <span>WhatsApp টেস্ট করুন</span>
+                        </a>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      required
+                      value={bWhatsappNumber}
+                      onChange={(e) => setBWhatsappNumber(e.target.value)}
+                      placeholder="যেমন: 01711889900 বা +8801711889900"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm text-slate-900 font-bold focus:outline-none focus:border-emerald-500 transition-all shadow-2xs"
+                    />
+                    <span className="text-[11px] text-slate-400 mt-1 block">
+                      কাস্টমাররা স্টোরফ্রন্টের ফ্লোটিং চ্যাট ও ফুটার থেকে সরাসরি এই নাম্বারে মেসেজ দিতে পারবে।
+                    </span>
+                  </div>
+
+                  {/* Contact Phone */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-slate-500" />
+                      <span>হেল্পলাইন ফোন নাম্বার (Support Call)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={bContactPhone}
+                      onChange={(e) => setBContactPhone(e.target.value)}
+                      placeholder="যেমন: 01711889900"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:border-red-500 transition-all"
+                    />
+                  </div>
+
+                  {/* Contact Email */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-slate-500" />
+                      <span>সাপোর্ট ইমেইল এড্রেস (Support Email)</span>
+                    </label>
+                    <input
+                      type="email"
+                      value={bContactEmail}
+                      onChange={(e) => setBContactEmail(e.target.value)}
+                      placeholder="যেমন: support@yourstore.com"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:border-red-500 transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 3: SOCIAL MEDIA PROFILES & LINKS */}
+              <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 sm:p-6 space-y-5">
+                <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+                  <Share2 className="w-4 h-4 text-blue-600" />
+                  <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800">
+                    ৩. সোশ্যাল মিডিয়া লিংক ও পেজ
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Facebook Page */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                        <div className="w-5 h-5 rounded-md bg-blue-600 text-white flex items-center justify-center">
+                          <Facebook className="w-3 h-3 fill-current" />
+                        </div>
+                        <span>ফেসবুক পেজ লিংক (Facebook Page)</span>
+                      </label>
+                      {bFacebookUrl && (
+                        <a
+                          href={bFacebookUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] font-bold text-blue-600 hover:underline flex items-center gap-0.5"
+                        >
+                          <ExternalLink className="w-2.5 h-2.5" />
+                          <span>ভিজিট</span>
+                        </a>
+                      )}
+                    </div>
+                    <input
+                      type="url"
+                      value={bFacebookUrl}
+                      onChange={(e) => setBFacebookUrl(e.target.value)}
+                      placeholder="https://facebook.com/yourpagename"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500 transition-all"
+                    />
+                  </div>
+
+                  {/* Instagram Profile */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                        <div className="w-5 h-5 rounded-md bg-gradient-to-tr from-amber-500 via-pink-600 to-purple-600 text-white flex items-center justify-center">
+                          <Instagram className="w-3 h-3" />
+                        </div>
+                        <span>ইনস্টাগ্রাম প্রোফাইল (Instagram)</span>
+                      </label>
+                      {bInstagramUrl && (
+                        <a
+                          href={bInstagramUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] font-bold text-pink-600 hover:underline flex items-center gap-0.5"
+                        >
+                          <ExternalLink className="w-2.5 h-2.5" />
+                          <span>ভিজিট</span>
+                        </a>
+                      )}
+                    </div>
+                    <input
+                      type="url"
+                      value={bInstagramUrl}
+                      onChange={(e) => setBInstagramUrl(e.target.value)}
+                      placeholder="https://instagram.com/yourprofile"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-900 focus:outline-none focus:border-pink-500 transition-all"
+                    />
+                  </div>
+
+                  {/* YouTube Channel */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                        <div className="w-5 h-5 rounded-md bg-red-600 text-white flex items-center justify-center">
+                          <Youtube className="w-3 h-3 fill-current" />
+                        </div>
+                        <span>ইউটিউব চ্যানেল (YouTube Channel)</span>
+                      </label>
+                      {bYoutubeUrl && (
+                        <a
+                          href={bYoutubeUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] font-bold text-red-600 hover:underline flex items-center gap-0.5"
+                        >
+                          <ExternalLink className="w-2.5 h-2.5" />
+                          <span>ভিজিট</span>
+                        </a>
+                      )}
+                    </div>
+                    <input
+                      type="url"
+                      value={bYoutubeUrl}
+                      onChange={(e) => setBYoutubeUrl(e.target.value)}
+                      placeholder="https://youtube.com/@yourchannel"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-900 focus:outline-none focus:border-red-500 transition-all"
+                    />
+                  </div>
+
+                  {/* TikTok Profile */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                        <div className="w-5 h-5 rounded-md bg-black text-white flex items-center justify-center">
+                          <svg viewBox="0 0 24 24" fill="currentColor" className="w-3 h-3">
+                            <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.298-.002.595.042.88.13V9.4a6.33 6.33 0 0 0-1-.08A6.34 6.34 0 0 0 3 15.66a6.34 6.34 0 0 0 10.82 4.47 6.3 6.3 0 0 0 1.94-4.5V8.62a8.27 8.27 0 0 0 4.83 1.54V6.71a4.85 4.85 0 0 1-1-.02Z"/>
+                          </svg>
+                        </div>
+                        <span>টিকটক প্রোফাইল (TikTok Profile)</span>
+                      </label>
+                      {bTiktokUrl && (
+                        <a
+                          href={bTiktokUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[10px] font-bold text-zinc-800 hover:underline flex items-center gap-0.5"
+                        >
+                          <ExternalLink className="w-2.5 h-2.5" />
+                          <span>ভিজিট</span>
+                        </a>
+                      )}
+                    </div>
+                    <input
+                      type="url"
+                      value={bTiktokUrl}
+                      onChange={(e) => setBTiktokUrl(e.target.value)}
+                      placeholder="https://tiktok.com/@youraccount"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-900 focus:outline-none focus:border-zinc-800 transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 4: THEME COLOR & STORE NOTICES */}
+              <div className="bg-slate-50/70 border border-slate-200/80 rounded-2xl p-5 sm:p-6 space-y-5">
+                <div className="flex items-center gap-2 border-b border-slate-200 pb-3">
+                  <Palette className="w-4 h-4 text-purple-600" />
+                  <h4 className="text-xs sm:text-sm font-black uppercase tracking-wider text-slate-800">
+                    ৪. থিম কালার ও এনাউন্সমেন্ট টেক্সট
+                  </h4>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Theme Color Picker */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-2">
+                      প্রাইমারি থিম কালার (Primary Brand Color)
+                    </label>
+                    <div className="flex flex-wrap items-center gap-2.5">
+                      {[
+                        { name: 'ROT Crimson Red', hex: '#DC2626' },
+                        { name: 'Royal Blue', hex: '#2563EB' },
+                        { name: 'Emerald Green', hex: '#059669' },
+                        { name: 'Sunset Orange', hex: '#EA580C' },
+                        { name: 'Purple Luxury', hex: '#7C3AED' },
+                        { name: 'Rose Pink', hex: '#E11D48' },
+                        { name: 'Midnight Onyx', hex: '#0F172A' },
+                        { name: 'Teal Cyan', hex: '#0D9488' },
+                      ].map((c) => (
+                        <button
+                          key={c.hex}
+                          type="button"
+                          onClick={() => setBPrimaryColor(c.hex)}
+                          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all cursor-pointer ${
+                            bPrimaryColor.toLowerCase() === c.hex.toLowerCase()
+                              ? 'border-slate-900 ring-2 ring-slate-900/20 shadow-xs bg-white text-slate-900'
+                              : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                          }`}
+                        >
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-black/10 shrink-0"
+                            style={{ backgroundColor: c.hex }}
+                          />
+                          <span>{c.name}</span>
+                          {bPrimaryColor.toLowerCase() === c.hex.toLowerCase() && (
+                            <Check className="w-3 h-3 text-slate-900" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="mt-3 flex items-center gap-3 max-w-xs">
+                      <span className="text-[11px] font-bold text-slate-500">কাস্টম হেক্স কোড:</span>
+                      <div className="flex items-center gap-2 flex-1">
+                        <input
+                          type="color"
+                          value={bPrimaryColor}
+                          onChange={(e) => setBPrimaryColor(e.target.value)}
+                          className="w-8 h-8 rounded-lg cursor-pointer border border-slate-200 p-0.5 bg-white"
+                        />
+                        <input
+                          type="text"
+                          value={bPrimaryColor}
+                          onChange={(e) => setBPrimaryColor(e.target.value)}
+                          className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-1 text-xs font-mono font-bold text-slate-900 uppercase"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Announcement Text */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      টপ এনাউন্সমেন্ট নোটিশ বার (Top Announcement Bar Text)
+                    </label>
+                    <input
+                      type="text"
+                      value={bAnnouncementText}
+                      onChange={(e) => setBAnnouncementText(e.target.value)}
+                      placeholder="যেমন: 🔥 সারা দেশে ক্যাশ অন ডেলিভারি এবং ফ্রি রিটার্ন সুবিধা!"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-xs text-slate-900 font-bold focus:outline-none focus:border-red-500 transition-all shadow-2xs"
+                    />
+                  </div>
+
+                  {/* About Store */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                      স্টোর পরিচিতি / বায়ো (About Store / Bio)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={bAboutStore}
+                      onChange={(e) => setBAboutStore(e.target.value)}
+                      placeholder="দোকানের সংক্ষিপ্ত বর্ণনা যা ফুটারে গ্রাহকদের দেখানো হবে..."
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-2 text-xs text-slate-900 focus:outline-none focus:border-red-500 transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SAVE BUTTON */}
+              <div className="pt-2 flex justify-end">
+                <button
+                  type="submit"
+                  className="px-8 py-3.5 rounded-2xl text-white font-black text-sm transition-all shadow-md active:scale-95 flex items-center gap-2 cursor-pointer"
+                  style={{ backgroundColor: bPrimaryColor }}
+                >
+                  <Save className="w-4 h-4" />
+                  <span>ব্র্যান্ডিং ও সোশ্যাল লিংক সংরক্ষণ করুন</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
 
         {/* SECURITY & PASSWORDS TAB CONTENT */}
         {activeTab === 'security' && (

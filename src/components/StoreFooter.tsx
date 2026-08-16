@@ -42,10 +42,13 @@ export const StoreFooter: React.FC<StoreFooterProps> = ({
   const whatsappHref = rawWa ? `https://wa.me/${formattedWa}` : '#';
 
   // Social Links with fallback or custom URLs
-  const facebookUrl = branding.facebookUrl || 'https://facebook.com';
-  const youtubeUrl = branding.youtubeUrl || 'https://youtube.com';
-  const instagramUrl = branding.instagramUrl || 'https://instagram.com';
+  const facebookUrl = branding.facebookUrl || '';
+  const youtubeUrl = branding.youtubeUrl || '';
+  const instagramUrl = branding.instagramUrl || '';
+  const tiktokUrl = branding.tiktokUrl || '';
   const emailHref = branding.contactEmail ? `mailto:${branding.contactEmail}` : '#';
+
+  const hasAnySocial = facebookUrl || youtubeUrl || instagramUrl || tiktokUrl || rawWa;
 
   return (
     <footer className="bg-slate-950 border-t border-slate-800 text-slate-200 font-sans mt-8 transition-colors">
@@ -83,46 +86,70 @@ export const StoreFooter: React.FC<StoreFooterProps> = ({
               </h5>
               <div className="flex flex-wrap items-center gap-2.5">
                 {/* Facebook Page Button */}
-                <a
-                  href={facebookUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook Page"
-                  className="group flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-blue-600 border border-slate-800 hover:border-blue-500 text-blue-400 hover:text-white transition-all shadow-2xs active:scale-95"
-                  title="ফেসবুক পেজ ভিজিট করুন"
-                >
-                  <Facebook className="w-4 h-4 fill-current transition-colors" />
-                  <span className="text-xs font-bold">Facebook</span>
-                  <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100" />
-                </a>
+                {(facebookUrl || !hasAnySocial) && (
+                  <a
+                    href={facebookUrl || 'https://facebook.com'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Facebook Page"
+                    className="group flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-blue-600 border border-slate-800 hover:border-blue-500 text-blue-400 hover:text-white transition-all shadow-2xs active:scale-95"
+                    title="ফেসবুক পেজ ভিজিট করুন"
+                  >
+                    <Facebook className="w-4 h-4 fill-current transition-colors" />
+                    <span className="text-xs font-bold">Facebook</span>
+                    <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                  </a>
+                )}
 
                 {/* YouTube Channel Button */}
-                <a
-                  href={youtubeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="YouTube Channel"
-                  className="group flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-red-600 border border-slate-800 hover:border-red-500 text-red-400 hover:text-white transition-all shadow-2xs active:scale-95"
-                  title="ইউটিউব চ্যানেল সাবস্ক্রাইব করুন"
-                >
-                  <Youtube className="w-4 h-4 fill-current transition-colors" />
-                  <span className="text-xs font-bold">YouTube</span>
-                  <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100" />
-                </a>
+                {youtubeUrl && (
+                  <a
+                    href={youtubeUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="YouTube Channel"
+                    className="group flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-red-600 border border-slate-800 hover:border-red-500 text-red-400 hover:text-white transition-all shadow-2xs active:scale-95"
+                    title="ইউটিউব চ্যানেল সাবস্ক্রাইব করুন"
+                  >
+                    <Youtube className="w-4 h-4 fill-current transition-colors" />
+                    <span className="text-xs font-bold">YouTube</span>
+                    <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                  </a>
+                )}
 
                 {/* Instagram Profile Button */}
-                <a
-                  href={instagramUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Instagram Profile"
-                  className="group flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-gradient-to-r hover:from-pink-600 hover:to-rose-600 border border-slate-800 hover:border-pink-500 text-pink-400 hover:text-white transition-all shadow-2xs active:scale-95"
-                  title="ইন্সটাগ্রাম একাউন্ট ফলো করুন"
-                >
-                  <Instagram className="w-4 h-4 transition-colors" />
-                  <span className="text-xs font-bold">Instagram</span>
-                  <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100" />
-                </a>
+                {instagramUrl && (
+                  <a
+                    href={instagramUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="Instagram Profile"
+                    className="group flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-gradient-to-r hover:from-pink-600 hover:to-rose-600 border border-slate-800 hover:border-pink-500 text-pink-400 hover:text-white transition-all shadow-2xs active:scale-95"
+                    title="ইন্সটাগ্রাম একাউন্ট ফলো করুন"
+                  >
+                    <Instagram className="w-4 h-4 transition-colors" />
+                    <span className="text-xs font-bold">Instagram</span>
+                    <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                  </a>
+                )}
+
+                {/* TikTok Profile Button */}
+                {tiktokUrl && (
+                  <a
+                    href={tiktokUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label="TikTok Profile"
+                    className="group flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-zinc-800 border border-slate-800 hover:border-zinc-500 text-zinc-200 hover:text-white transition-all shadow-2xs active:scale-95"
+                    title="টিকটক একাউন্ট ফলো করুন"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4">
+                      <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64c.298-.002.595.042.88.13V9.4a6.33 6.33 0 0 0-1-.08A6.34 6.34 0 0 0 3 15.66a6.34 6.34 0 0 0 10.82 4.47 6.3 6.3 0 0 0 1.94-4.5V8.62a8.27 8.27 0 0 0 4.83 1.54V6.71a4.85 4.85 0 0 1-1-.02Z"/>
+                    </svg>
+                    <span className="text-xs font-bold">TikTok</span>
+                    <ExternalLink className="w-3 h-3 opacity-60 group-hover:opacity-100" />
+                  </a>
+                )}
 
                 {/* WhatsApp Chat Button */}
                 {rawWa && (

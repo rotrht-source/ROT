@@ -79,6 +79,7 @@ export interface StoreBranding {
   facebookUrl?: string;
   youtubeUrl?: string;
   instagramUrl?: string;
+  tiktokUrl?: string;
   aboutStore?: string;
 }
 
