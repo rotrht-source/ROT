@@ -83,6 +83,24 @@ export interface StoreBranding {
   aboutStore?: string;
 }
 
+export interface AgencyConfig {
+  agencyName: string;
+  tagline: string;
+  logoUrl?: string;
+  whatsappNumber: string;
+  contactPhone: string;
+  contactEmail: string;
+  facebookUrl?: string;
+  youtubeUrl?: string;
+  instagramUrl?: string;
+  tiktokUrl?: string;
+  monthlyPrice: number;
+  currencySymbol: string;
+  announcementText?: string;
+  heroTitle?: string;
+  heroSubtitle?: string;
+}
+
 export interface Store {
   id: string;
   branding: StoreBranding;

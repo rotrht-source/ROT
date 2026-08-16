@@ -86,9 +86,13 @@ export function parseUrlRoute(stores: Store[]): {
     );
   };
 
-  // 1. Path-based check: /admin/<unique_id> or /admin
+  // 1. Path-based check: /master or /admin/<unique_id> or /admin
   if (pathname) {
     const segments = pathname.split('/');
+    if (segments[0].toLowerCase() === 'master' || segments[0].toLowerCase() === 'superadmin' || segments[0].toLowerCase() === 'agency-admin') {
+      return { viewMode: 'super_admin', selectedStoreId: null, isDirectStoreLink: false };
+    }
+
     if (segments[0].toLowerCase() === 'admin') {
       if (segments[1]) {
         const matched = findStoreMatch(segments[1]);
@@ -101,7 +105,7 @@ export function parseUrlRoute(stores: Store[]): {
           return { viewMode: 'client_admin', selectedStoreId: matched.id, isDirectStoreLink: true };
         }
       }
-      // If /admin is visited directly without params
+      // If /admin is visited directly without store slug, open client admin for first store or super_admin
       return { viewMode: 'client_admin', selectedStoreId: stores[0]?.id || null, isDirectStoreLink: true };
     }
 
@@ -138,7 +142,11 @@ export function parseUrlRoute(stores: Store[]): {
     }
   }
 
-  // 4. View query param: ?view=client_admin
+  // 4. View query param: ?view=super_admin or ?view=client_admin
+  if (viewParam === 'super_admin' || viewParam === 'master' || viewParam === 'agency_settings' || searchParams.has('master')) {
+    return { viewMode: 'super_admin', selectedStoreId: null, isDirectStoreLink: false };
+  }
+
   if (viewParam === 'admin' || viewParam === 'client_admin') {
     return { viewMode: 'client_admin', selectedStoreId: stores[0]?.id || null, isDirectStoreLink: false };
   }
@@ -162,6 +170,10 @@ export function navigateToUrl(viewMode: ViewMode, store?: Store | null): void {
     url.search = '';
     url.pathname = '/';
     window.history.pushState({ viewMode: 'home' }, '', url.toString());
+  } else if (viewMode === 'super_admin') {
+    url.search = '?view=master';
+    url.pathname = '/';
+    window.history.pushState({ viewMode: 'super_admin' }, '', url.toString());
   } else if (viewMode === 'storefront' && store) {
     const slug = getStoreUniqueId(store);
     url.search = `?store=${encodeURIComponent(slug)}`;

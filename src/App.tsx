@@ -7,8 +7,11 @@ import {
   addOrderToStore,
   resetToDefaults,
   subscribeToFirestoreStores,
+  getAgencyConfig,
+  saveAgencyConfig,
+  subscribeToFirestoreAgencyConfig,
 } from './utils/storage';
-import { Store, ViewMode, CartItem, Product, Order } from './types';
+import { Store, ViewMode, CartItem, Product, Order, AgencyConfig } from './types';
 import { HomePage } from './components/HomePage';
 import { ShopFront } from './components/ShopFront';
 import { ClientAdmin } from './components/ClientAdmin';
@@ -24,6 +27,7 @@ import {
 
 export default function App() {
   const [stores, setStores] = useState<Store[]>(() => getStores());
+  const [agencyConfig, setAgencyConfig] = useState<AgencyConfig>(() => getAgencyConfig());
   const [isMasterAuthenticated, setIsMasterAuthenticated] = useState<boolean>(() => checkMasterAuthentication());
   
   // Initial URL Route detection
@@ -38,9 +42,9 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [cart, setCart] = useState<CartItem[]>([]);
 
-  // Synchronize stores with Firestore real-time listener & localStorage fallback
+  // Synchronize stores and agency config with Firestore real-time listener & localStorage fallback
   useEffect(() => {
-    const unsubscribe = subscribeToFirestoreStores((updatedStores) => {
+    const unsubscribeStores = subscribeToFirestoreStores((updatedStores) => {
       if (updatedStores && updatedStores.length > 0) {
         setStores(updatedStores);
         
@@ -58,6 +62,12 @@ export default function App() {
       }
     });
 
+    const unsubscribeAgency = subscribeToFirestoreAgencyConfig((updatedConfig) => {
+      if (updatedConfig) {
+        setAgencyConfig(updatedConfig);
+      }
+    });
+
     // Handle browser back / forward button navigation
     const handlePopState = () => {
       const currentStores = getStores();
@@ -72,7 +82,8 @@ export default function App() {
     window.addEventListener('popstate', handlePopState);
 
     return () => {
-      unsubscribe();
+      unsubscribeStores();
+      unsubscribeAgency();
       window.removeEventListener('popstate', handlePopState);
     };
   }, []);
@@ -160,6 +171,11 @@ export default function App() {
     }
   };
 
+  const handleUpdateAgencyConfig = (updated: AgencyConfig) => {
+    const saved = saveAgencyConfig(updated);
+    setAgencyConfig(saved);
+  };
+
   if (!activeStore) {
     return (
       <div className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4">
@@ -174,20 +190,29 @@ export default function App() {
       <main className="flex-1 overflow-x-hidden">
         {(viewMode === 'home' || viewMode === 'super_admin') && (
           !isMasterAuthenticated ? (
-            /* High-conversion agency landing page with 5 demo stores & WhatsApp CTAs */
+            /* High-conversion agency landing page / Website Order Home Page with 5 demo stores & WhatsApp CTAs */
             <RotWebAgencyLanding
               stores={stores}
+              agencyConfig={agencyConfig}
               onOpenStorefront={(id) => handleNavigate('storefront', id)}
               onUnlockMaster={() => setIsMasterAuthenticated(true)}
+              onOpenMasterDashboard={() => setIsMasterAuthenticated(true)}
+              isMasterAuthenticated={isMasterAuthenticated}
             />
           ) : (
             <HomePage
               stores={stores}
+              agencyConfig={agencyConfig}
               onCreateStore={handleCreateStore}
               onDeleteStore={handleDeleteStore}
               onOpenSubdomainGuide={() => setIsGuideOpen(true)}
               onOpenPublicView={(id) => handleNavigate('storefront', id)}
               onOpenClientAdmin={(id) => handleNavigate('client_admin', id)}
+              onOpenPublicAgencyPage={() => {
+                setIsMasterAuthenticated(false);
+                handleNavigate('home');
+              }}
+              onUpdateAgencyConfig={handleUpdateAgencyConfig}
               onUpdateStore={handleUpdateStore}
               onResetData={handleResetData}
               onLogoutMaster={() => {

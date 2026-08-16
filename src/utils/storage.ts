@@ -1,4 +1,4 @@
-import { Store, Order, Product, Category, StoreBranding } from '../types';
+import { Store, Order, Product, Category, StoreBranding, AgencyConfig } from '../types';
 import { INITIAL_STORES } from '../data/initialStores';
 import { db } from '../lib/firebase';
 import {
@@ -12,6 +12,117 @@ import {
 
 const STORAGE_KEY = 'ecom_foundation_stores_v5';
 const STORES_COLLECTION = 'stores_v5';
+
+const AGENCY_STORAGE_KEY = 'rot_agency_config_v5';
+const AGENCY_COLLECTION = 'agency_settings_v5';
+const AGENCY_DOC_ID = 'main_config';
+
+export const DEFAULT_AGENCY_CONFIG: AgencyConfig = {
+  agencyName: 'ROT Web Solutions',
+  tagline: 'মাসিক মাত্র ৫০০ টাকায় আপনার ব্যবসার সম্পূর্ণ রেডি ই-কমার্স ওয়েবসাইট',
+  logoUrl: '',
+  whatsappNumber: '01711889900',
+  contactPhone: '01711889900',
+  contactEmail: 'contact@rotweb.com',
+  facebookUrl: 'https://facebook.com',
+  youtubeUrl: 'https://youtube.com',
+  instagramUrl: 'https://instagram.com',
+  tiktokUrl: 'https://tiktok.com',
+  monthlyPrice: 500,
+  currencySymbol: '৳',
+  announcementText: 'মাসিক মাত্র ৫০০ টাকায় আপনার ব্যবসার ফুল রেডি ই-কমার্স ওয়েবসাইট',
+  heroTitle: 'ROT এর সাথে শুরু হোক আপনার ই-কমার্স বিজনেস',
+  heroSubtitle: 'কোনো ডেভেলপার বা টেকনিক্যাল ঝামেলা ছাড়াই মাত্র ২৪ ঘণ্টায় আপনার নিজস্ব ব্র্যান্ডের প্রিমিয়াম অনলাইন স্টোর চালু করুন।',
+};
+
+export function normalizeAgencyConfig(raw?: Partial<AgencyConfig> | null): AgencyConfig {
+  if (!raw) return DEFAULT_AGENCY_CONFIG;
+  return {
+    agencyName: raw.agencyName || DEFAULT_AGENCY_CONFIG.agencyName,
+    tagline: raw.tagline || DEFAULT_AGENCY_CONFIG.tagline,
+    logoUrl: raw.logoUrl || '',
+    whatsappNumber: raw.whatsappNumber || DEFAULT_AGENCY_CONFIG.whatsappNumber,
+    contactPhone: raw.contactPhone || DEFAULT_AGENCY_CONFIG.contactPhone,
+    contactEmail: raw.contactEmail || DEFAULT_AGENCY_CONFIG.contactEmail,
+    facebookUrl: raw.facebookUrl !== undefined ? raw.facebookUrl : DEFAULT_AGENCY_CONFIG.facebookUrl,
+    youtubeUrl: raw.youtubeUrl !== undefined ? raw.youtubeUrl : DEFAULT_AGENCY_CONFIG.youtubeUrl,
+    instagramUrl: raw.instagramUrl !== undefined ? raw.instagramUrl : DEFAULT_AGENCY_CONFIG.instagramUrl,
+    tiktokUrl: raw.tiktokUrl !== undefined ? raw.tiktokUrl : DEFAULT_AGENCY_CONFIG.tiktokUrl,
+    monthlyPrice: typeof raw.monthlyPrice === 'number' && !isNaN(raw.monthlyPrice) ? raw.monthlyPrice : 500,
+    currencySymbol: raw.currencySymbol || '৳',
+    announcementText: raw.announcementText || DEFAULT_AGENCY_CONFIG.announcementText,
+    heroTitle: raw.heroTitle || DEFAULT_AGENCY_CONFIG.heroTitle,
+    heroSubtitle: raw.heroSubtitle || DEFAULT_AGENCY_CONFIG.heroSubtitle,
+  };
+}
+
+export function getAgencyConfig(): AgencyConfig {
+  try {
+    const saved = localStorage.getItem(AGENCY_STORAGE_KEY);
+    if (!saved) {
+      localStorage.setItem(AGENCY_STORAGE_KEY, JSON.stringify(DEFAULT_AGENCY_CONFIG));
+      return DEFAULT_AGENCY_CONFIG;
+    }
+    const parsed = JSON.parse(saved);
+    return normalizeAgencyConfig(parsed);
+  } catch (err) {
+    console.error('Failed to load agency config from localStorage', err);
+    return DEFAULT_AGENCY_CONFIG;
+  }
+}
+
+export function saveAgencyConfig(config: AgencyConfig): AgencyConfig {
+  const normalized = normalizeAgencyConfig(config);
+  try {
+    localStorage.setItem(AGENCY_STORAGE_KEY, JSON.stringify(normalized));
+  } catch (err) {
+    console.warn('Local storage write warning for agency config', err);
+  }
+  syncAgencyConfigToFirestore(normalized);
+  return normalized;
+}
+
+export async function syncAgencyConfigToFirestore(config: AgencyConfig): Promise<void> {
+  try {
+    const normalized = normalizeAgencyConfig(config);
+    const configRef = doc(db, AGENCY_COLLECTION, AGENCY_DOC_ID);
+    await setDoc(configRef, normalized, { merge: true });
+  } catch (error) {
+    console.warn('Firestore sync error for agency config:', error);
+  }
+}
+
+export function subscribeToFirestoreAgencyConfig(
+  onConfigUpdated: (config: AgencyConfig) => void
+): () => void {
+  const docRef = doc(db, AGENCY_COLLECTION, AGENCY_DOC_ID);
+
+  const unsubscribe = onSnapshot(
+    docRef,
+    (snapshot) => {
+      if (snapshot.exists()) {
+        const cloudConfig = normalizeAgencyConfig(snapshot.data() as Partial<AgencyConfig>);
+        try {
+          localStorage.setItem(AGENCY_STORAGE_KEY, JSON.stringify(cloudConfig));
+        } catch (e) {
+          // ignore
+        }
+        onConfigUpdated(cloudConfig);
+      } else {
+        // Seed default
+        const local = getAgencyConfig();
+        syncAgencyConfigToFirestore(local);
+        onConfigUpdated(local);
+      }
+    },
+    (error) => {
+      console.warn('Agency config firestore subscription fallback:', error);
+      onConfigUpdated(getAgencyConfig());
+    }
+  );
+
+  return unsubscribe;
+}
 
 const DEFAULT_BRANDING: StoreBranding = {
   storeName: 'জারা ফ্যাশন (Zara Fashion BD)',

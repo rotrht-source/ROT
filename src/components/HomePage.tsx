@@ -38,10 +38,11 @@ import {
   ShieldCheck,
   ShieldAlert,
 } from 'lucide-react';
-import { Store } from '../types';
+import { Store, AgencyConfig } from '../types';
 import { compressImage } from '../utils/imageCompressor';
 import { uploadImageSmart } from '../utils/smartImageUploader';
 import { getImgbbApiKey, setImgbbApiKey } from '../utils/imgbbService';
+import { DEFAULT_AGENCY_CONFIG } from '../utils/storage';
 import {
   getMasterSecretKey,
   setMasterSecretKey,
@@ -58,33 +59,105 @@ import {
 
 interface Props {
   stores: Store[];
+  agencyConfig?: AgencyConfig;
   onCreateStore: (newStore: Store) => void;
   onUpdateStore: (updatedStore: Store) => void;
   onDeleteStore: (storeId: string) => void;
   onOpenPublicView: (storeId: string) => void;
   onOpenClientAdmin: (storeId: string) => void;
   onOpenSubdomainGuide: () => void;
+  onOpenPublicAgencyPage?: () => void;
+  onUpdateAgencyConfig?: (config: AgencyConfig) => void;
   onResetData?: () => void;
   onLogoutMaster?: () => void;
 }
 
 export const HomePage: React.FC<Props> = ({
   stores,
+  agencyConfig,
   onCreateStore,
   onUpdateStore,
   onDeleteStore,
   onOpenPublicView,
   onOpenClientAdmin,
   onOpenSubdomainGuide,
+  onOpenPublicAgencyPage,
+  onUpdateAgencyConfig,
   onResetData,
   onLogoutMaster,
 }) => {
-  const [activeTab, setActiveTab] = useState<'home' | 'websites' | 'admin' | 'settings'>('home');
+  const [activeTab, setActiveTab] = useState<'home' | 'websites' | 'admin' | 'agency_branding' | 'settings'>('home');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingSettingsStoreId, setEditingSettingsStoreId] = useState<string | null>(null);
   const [isSettingsSaved, setIsSettingsSaved] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Agency Branding & Landing Page Form State
+  const [agencyName, setAgencyName] = useState(agencyConfig?.agencyName || DEFAULT_AGENCY_CONFIG.agencyName);
+  const [agencyTagline, setAgencyTagline] = useState(agencyConfig?.tagline || DEFAULT_AGENCY_CONFIG.tagline);
+  const [agencyLogoUrl, setAgencyLogoUrl] = useState(agencyConfig?.logoUrl || DEFAULT_AGENCY_CONFIG.logoUrl);
+  const [agencyWhatsapp, setAgencyWhatsapp] = useState(agencyConfig?.whatsappNumber || DEFAULT_AGENCY_CONFIG.whatsappNumber);
+  const [agencyPhone, setAgencyPhone] = useState(agencyConfig?.contactPhone || DEFAULT_AGENCY_CONFIG.contactPhone);
+  const [agencyEmail, setAgencyEmail] = useState(agencyConfig?.contactEmail || DEFAULT_AGENCY_CONFIG.contactEmail);
+  const [agencyFacebook, setAgencyFacebook] = useState(agencyConfig?.facebookUrl || DEFAULT_AGENCY_CONFIG.facebookUrl);
+  const [agencyYoutube, setAgencyYoutube] = useState(agencyConfig?.youtubeUrl || DEFAULT_AGENCY_CONFIG.youtubeUrl);
+  const [agencyInstagram, setAgencyInstagram] = useState(agencyConfig?.instagramUrl || DEFAULT_AGENCY_CONFIG.instagramUrl);
+  const [agencyTiktok, setAgencyTiktok] = useState(agencyConfig?.tiktokUrl || DEFAULT_AGENCY_CONFIG.tiktokUrl);
+  const [agencyMonthlyPrice, setAgencyMonthlyPrice] = useState<number>(agencyConfig?.monthlyPrice || DEFAULT_AGENCY_CONFIG.monthlyPrice);
+  const [agencyCurrencySymbol, setAgencyCurrencySymbol] = useState(agencyConfig?.currencySymbol || DEFAULT_AGENCY_CONFIG.currencySymbol);
+  const [agencyAnnouncement, setAgencyAnnouncement] = useState(agencyConfig?.announcementText || DEFAULT_AGENCY_CONFIG.announcementText);
+  const [agencyHeroTitle, setAgencyHeroTitle] = useState(agencyConfig?.heroTitle || DEFAULT_AGENCY_CONFIG.heroTitle);
+  const [agencyHeroSubtitle, setAgencyHeroSubtitle] = useState(agencyConfig?.heroSubtitle || DEFAULT_AGENCY_CONFIG.heroSubtitle);
+  const [isAgencySaved, setIsAgencySaved] = useState(false);
+
+  // Sync state if agencyConfig changes from Firestore or parent
+  React.useEffect(() => {
+    if (agencyConfig) {
+      setAgencyName(agencyConfig.agencyName || DEFAULT_AGENCY_CONFIG.agencyName);
+      setAgencyTagline(agencyConfig.tagline || DEFAULT_AGENCY_CONFIG.tagline);
+      setAgencyLogoUrl(agencyConfig.logoUrl || DEFAULT_AGENCY_CONFIG.logoUrl);
+      setAgencyWhatsapp(agencyConfig.whatsappNumber || DEFAULT_AGENCY_CONFIG.whatsappNumber);
+      setAgencyPhone(agencyConfig.contactPhone || DEFAULT_AGENCY_CONFIG.contactPhone);
+      setAgencyEmail(agencyConfig.contactEmail || DEFAULT_AGENCY_CONFIG.contactEmail);
+      setAgencyFacebook(agencyConfig.facebookUrl || DEFAULT_AGENCY_CONFIG.facebookUrl);
+      setAgencyYoutube(agencyConfig.youtubeUrl || DEFAULT_AGENCY_CONFIG.youtubeUrl);
+      setAgencyInstagram(agencyConfig.instagramUrl || DEFAULT_AGENCY_CONFIG.instagramUrl);
+      setAgencyTiktok(agencyConfig.tiktokUrl || DEFAULT_AGENCY_CONFIG.tiktokUrl);
+      setAgencyMonthlyPrice(agencyConfig.monthlyPrice || DEFAULT_AGENCY_CONFIG.monthlyPrice);
+      setAgencyCurrencySymbol(agencyConfig.currencySymbol || DEFAULT_AGENCY_CONFIG.currencySymbol);
+      setAgencyAnnouncement(agencyConfig.announcementText || DEFAULT_AGENCY_CONFIG.announcementText);
+      setAgencyHeroTitle(agencyConfig.heroTitle || DEFAULT_AGENCY_CONFIG.heroTitle);
+      setAgencyHeroSubtitle(agencyConfig.heroSubtitle || DEFAULT_AGENCY_CONFIG.heroSubtitle);
+    }
+  }, [agencyConfig]);
+
+  const handleSaveAgencyConfig = (e: React.FormEvent) => {
+    e.preventDefault();
+    const updated: AgencyConfig = {
+      agencyName: agencyName.trim() || 'ROT Web Solutions',
+      tagline: agencyTagline.trim(),
+      logoUrl: agencyLogoUrl.trim(),
+      whatsappNumber: agencyWhatsapp.trim() || '01711889900',
+      contactPhone: agencyPhone.trim() || '01711889900',
+      contactEmail: agencyEmail.trim() || 'contact@rotweb.com',
+      facebookUrl: agencyFacebook.trim(),
+      youtubeUrl: agencyYoutube.trim(),
+      instagramUrl: agencyInstagram.trim(),
+      tiktokUrl: agencyTiktok.trim(),
+      monthlyPrice: Number(agencyMonthlyPrice) || 500,
+      currencySymbol: agencyCurrencySymbol.trim() || '৳',
+      announcementText: agencyAnnouncement.trim(),
+      heroTitle: agencyHeroTitle.trim(),
+      heroSubtitle: agencyHeroSubtitle.trim(),
+    };
+
+    if (onUpdateAgencyConfig) {
+      onUpdateAgencyConfig(updated);
+    }
+    setIsAgencySaved(true);
+    setTimeout(() => setIsAgencySaved(false), 3500);
+  };
 
   // New Store Form State
   const [sName, setSName] = useState('');
@@ -376,13 +449,19 @@ export const HomePage: React.FC<Props> = ({
               <>
                 <ChevronRight className="w-4 h-4 text-slate-400" />
                 <span className="text-xs font-extrabold text-slate-900 capitalize bg-slate-100/80 border border-slate-200 px-3 py-1.5 rounded-xl">
-                  {activeTab === 'websites' ? '🌐 ওয়েবসাইটসমূহ' : activeTab === 'admin' ? '🔑 ক্লায়েন্ট অ্যাডমিন' : '⚙️ এজেন্সি সেটিংস'}
+                  {activeTab === 'websites'
+                    ? '🌐 ওয়েবসাইটসমূহ'
+                    : activeTab === 'admin'
+                    ? '🔑 ক্লায়েন্ট অ্যাডমিন'
+                    : activeTab === 'agency_branding'
+                    ? '🏠 হোম পেজ (অর্ডার পেজ) সেটিংস'
+                    : '⚙️ শপ সেটিংস'}
                 </span>
               </>
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             <button
               onClick={() => setActiveTab('websites')}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
@@ -406,6 +485,17 @@ export const HomePage: React.FC<Props> = ({
               <span>Admin ({stores.length})</span>
             </button>
             <button
+              onClick={() => setActiveTab('agency_branding')}
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                activeTab === 'agency_branding'
+                  ? 'bg-purple-50 text-purple-700 border border-purple-300 font-extrabold shadow-2xs ring-2 ring-purple-500/20'
+                  : 'text-purple-700 bg-purple-50/50 hover:bg-purple-100 border border-purple-200/60'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-600" />
+              <span>🏠 হোম পেজ (অর্ডার পেজ) সেটিংস</span>
+            </button>
+            <button
               onClick={() => setActiveTab('settings')}
               className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
                 activeTab === 'settings'
@@ -416,6 +506,17 @@ export const HomePage: React.FC<Props> = ({
               <Sliders className="w-3.5 h-3.5 text-red-600" />
               <span>Settings</span>
             </button>
+
+            {onOpenPublicAgencyPage && (
+              <button
+                onClick={onOpenPublicAgencyPage}
+                className="p-2 px-3 bg-gradient-to-r from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 text-purple-800 border border-purple-200 rounded-xl transition-all flex items-center gap-1.5 font-extrabold shadow-2xs active:scale-95 text-xs"
+                title="মূল হোম পেজ (যেখানে কাস্টমাররা ওয়েবসাইট অর্ডার করে) সরাসরি দেখুন"
+              >
+                <ExternalLink className="w-3.5 h-3.5 text-purple-600" />
+                <span className="hidden sm:inline">হোম পেজ ভিউ (অর্ডার পেজ)</span>
+              </button>
+            )}
 
             <button
               onClick={handleCopyMasterUrl}
@@ -508,34 +609,34 @@ export const HomePage: React.FC<Props> = ({
             </div>
 
             {/* Main Bento Navigation Boxes / Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
               
               {/* BOX 1: WEBSITES */}
               <div
                 onClick={() => setActiveTab('websites')}
-                className="bg-white border border-slate-200/90 hover:border-blue-500 rounded-3xl p-6 shadow-xs hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-6 group hover:-translate-y-0.5"
+                className="bg-white border border-slate-200/90 hover:border-blue-500 rounded-3xl p-6 shadow-xs hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-5 group hover:-translate-y-0.5"
               >
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   <div className="flex items-center justify-between">
                     <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <Globe className="w-6 h-6" />
                     </div>
                     <span className="text-xs font-black text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-full">
-                      {stores.length} টি ওয়েবসাইট
+                      {stores.length} টি শপ
                     </span>
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-black text-slate-900 group-hover:text-blue-600 transition-colors">
-                      Websites (পাবলিক ওয়েবসাইটসমূহ)
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-blue-600 transition-colors">
+                      Websites (ওয়েবসাইটসমূহ)
                     </h3>
-                    <p className="text-xs text-slate-500 font-medium leading-relaxed mt-2">
-                      তৈরি করা প্রতিটি ওয়েবসাইটের লাইভ তালিকা। এখানে ক্লিক করে যেকোনো স্টোরের পাবলিক ভিউ সরাসরি ওপেন করতে পারবেন।
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1.5">
+                      তৈরি করা সমস্ত ওয়েবসাইটের লাইভ তালিকা ও সরাসরি পাবলিক স্টোরফ্রন্ট প্রিভিউ।
                     </p>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between font-bold text-xs text-blue-600">
+                <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between font-bold text-xs text-blue-600">
                   <span>ওয়েবসাইটসমূহ দেখুন</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
@@ -544,9 +645,9 @@ export const HomePage: React.FC<Props> = ({
               {/* BOX 2: ADMIN */}
               <div
                 onClick={() => setActiveTab('admin')}
-                className="bg-white border border-slate-200/90 hover:border-amber-500 rounded-3xl p-6 shadow-xs hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-6 group hover:-translate-y-0.5"
+                className="bg-white border border-slate-200/90 hover:border-amber-500 rounded-3xl p-6 shadow-xs hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-5 group hover:-translate-y-0.5"
               >
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   <div className="flex items-center justify-between">
                     <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <Key className="w-6 h-6" />
@@ -557,48 +658,79 @@ export const HomePage: React.FC<Props> = ({
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-black text-slate-900 group-hover:text-amber-600 transition-colors">
-                      Admin (ক্লায়েন্ট অ্যাডমিন প্যানেল)
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-amber-600 transition-colors">
+                      Admin (ক্লায়েন্ট অ্যাডমিন)
                     </h3>
-                    <p className="text-xs text-slate-500 font-medium leading-relaxed mt-2">
-                      প্রতিটি ক্লায়েন্টের নির্ধারিত অ্যাডমিন প্যানেল। সেখান থেকে প্রোডাক্ট যোগ, এডিট এবং কাস্টমারদের অর্ডার রিসিভ করা যাবে।
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1.5">
+                      প্রতিটি ক্লায়েন্টের নির্ধারিত অ্যাডমিন ড্যাশবোর্ড ও শপ ম্যানেজমেন্ট লগইন।
                     </p>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between font-bold text-xs text-amber-600">
-                  <span>অ্যাডমিন ড্যাশবোর্ডে প্রবেশ করুন</span>
+                <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between font-bold text-xs text-amber-600">
+                  <span>অ্যাডমিন ড্যাশবোর্ডে প্রবেশ</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
 
-              {/* BOX 3: SETTINGS */}
+              {/* BOX 3: AGENCY HOME & ORDER PAGE */}
+              <div
+                onClick={() => setActiveTab('agency_branding')}
+                className="bg-gradient-to-b from-purple-50/50 to-white border border-purple-200 hover:border-purple-500 rounded-3xl p-6 shadow-xs hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-5 group hover:-translate-y-0.5"
+              >
+                <div className="space-y-3.5">
+                  <div className="flex items-center justify-between">
+                    <div className="w-12 h-12 rounded-2xl bg-purple-100 text-purple-700 border border-purple-200 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <Sparkles className="w-6 h-6" />
+                    </div>
+                    <span className="text-xs font-black text-purple-700 bg-purple-100/80 border border-purple-300 px-3 py-1 rounded-full flex items-center gap-1">
+                      🏠 মূল হোম পেজ (অর্ডার পেজ)
+                    </span>
+                  </div>
+
+                  <div>
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-purple-700 transition-colors">
+                      Home Page (ওয়েবসাইট অর্ডার পেজ)
+                    </h3>
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1.5">
+                      আপনার মূল হোম পেজের (যেখানে কাস্টমাররা ওয়েবসাইট অর্ডার করে) লোগো, হোয়াটসঅ্যাপ অর্ডার নম্বর, সোশ্যাল মিডিয়া লিঙ্ক ও প্যাকেজ ফি পরিবর্তন করুন।
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-3.5 border-t border-purple-100 flex items-center justify-between font-bold text-xs text-purple-700">
+                  <span>হোম পেজ তথ্য এডিট করুন</span>
+                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+              </div>
+
+              {/* BOX 4: SETTINGS */}
               <div
                 onClick={() => setActiveTab('settings')}
-                className="bg-white border border-slate-200/90 hover:border-red-500 rounded-3xl p-6 shadow-xs hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-6 group hover:-translate-y-0.5"
+                className="bg-white border border-slate-200/90 hover:border-red-500 rounded-3xl p-6 shadow-xs hover:shadow-lg transition-all duration-200 cursor-pointer flex flex-col justify-between space-y-5 group hover:-translate-y-0.5"
               >
-                <div className="space-y-4">
+                <div className="space-y-3.5">
                   <div className="flex items-center justify-between">
                     <div className="w-12 h-12 rounded-2xl bg-red-50 text-red-600 border border-red-100 flex items-center justify-center group-hover:scale-110 transition-transform">
                       <Sliders className="w-6 h-6" />
                     </div>
                     <span className="text-xs font-black text-red-700 bg-red-50 border border-red-200 px-3 py-1 rounded-full flex items-center gap-1">
-                      <Lock className="w-3 h-3" /> এজেন্সি কন্ট্রোল
+                      <Lock className="w-3 h-3" /> শপ সেটিংস
                     </span>
                   </div>
 
                   <div>
-                    <h3 className="text-lg font-black text-slate-900 group-hover:text-red-600 transition-colors">
-                      Settings (এজেন্সি সেটিংস)
+                    <h3 className="text-base sm:text-lg font-black text-slate-900 group-hover:text-red-600 transition-colors">
+                      Settings (শপ কনফিগারেশন)
                     </h3>
-                    <p className="text-xs text-slate-500 font-medium leading-relaxed mt-2">
-                      শপের নাম, সাব-ডোমেন, থিম কালার, লোগো, ব্যানার, হোয়াটসঅ্যাপ নম্বর ও ক্লায়েন্ট পাসওয়ার্ড সম্পূর্ণ কনফিগার করুন।
+                    <p className="text-xs text-slate-500 font-medium leading-relaxed mt-1.5">
+                      প্রতিটি শপের ব্যানার, সাবডোমেন, ক্লায়েন্ট পাসওয়ার্ড ও মাস্টার সিক্রেট কী এডিট করুন।
                     </p>
                   </div>
                 </div>
 
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between font-bold text-xs text-red-600">
-                  <span>স্টোর কনফিগারেশন পরিবর্তন</span>
+                <div className="pt-3.5 border-t border-slate-100 flex items-center justify-between font-bold text-xs text-red-600">
+                  <span>স্টোর কনফিগ পরিবর্তন</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </div>
               </div>
@@ -910,6 +1042,400 @@ export const HomePage: React.FC<Props> = ({
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* 3. AGENCY BRANDING & LANDING PAGE SETTINGS (Inside activeTab === 'agency_branding') */}
+        {activeTab === 'agency_branding' && (
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs space-y-8 animate-in fade-in duration-200">
+            {/* Header with Navigation and Quick Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-5">
+              <div className="flex items-center gap-3.5">
+                <button
+                  onClick={() => setActiveTab('home')}
+                  className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-all"
+                  title="হোমে ফিরে যান"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+                <div>
+                  <div className="inline-flex items-center gap-1.5 bg-purple-50 text-purple-700 border border-purple-200 px-2.5 py-0.5 rounded-md text-[11px] font-extrabold mb-1">
+                    <Sparkles className="w-3 h-3 text-purple-600" />
+                    <span>হোম পেজ ও অর্ডার সেটিংস</span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center gap-2">
+                    হোম পেজ (ওয়েবসাইট অর্ডার পেজ) সেটিংস
+                  </h2>
+                  <p className="text-xs text-slate-500 font-medium mt-0.5">
+                    আপনার মূল হোম পেজের (যে পেজে কাস্টমাররা ওয়েবসাইট অর্ডার করবে) লোগো, হোয়াটসঅ্যাপ অর্ডার নম্বর, সোশ্যাল মিডিয়া লিঙ্ক ও প্যাকেজ রেট কনফিগার করুন।
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                {onOpenPublicAgencyPage && (
+                  <button
+                    type="button"
+                    onClick={onOpenPublicAgencyPage}
+                    className="px-4 py-2.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl font-bold transition-all flex items-center gap-2 text-xs shadow-2xs active:scale-95"
+                  >
+                    <ExternalLink className="w-4 h-4 text-purple-600" />
+                    <span>লাইভ হোম পেজ দেখুন</span>
+                  </button>
+                )}
+
+                <button
+                  type="button"
+                  onClick={handleSaveAgencyConfig}
+                  className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold flex items-center gap-2 shadow-xs transition-all active:scale-95 text-xs"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>পরিবর্তন সেভ করুন</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Success Alert */}
+            {isAgencySaved && (
+              <div className="bg-emerald-50 border border-emerald-300 text-emerald-800 p-4 rounded-2xl flex items-center gap-3 text-xs font-bold shadow-xs animate-in fade-in duration-200">
+                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                <div>
+                  <p className="font-extrabold text-sm text-emerald-900">সকল ব্র্যান্ডিং তথ্য সফলভাবে সেভ হয়েছে!</p>
+                  <p className="text-emerald-700 font-normal">ক্লাউড ডাটাবেস ও মূল ডোমেনের ল্যান্ডিং পেজ লাইভ আপডেট হয়ে গেছে।</p>
+                </div>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveAgencyConfig} className="space-y-6">
+              {/* SECTION 1: Agency Identity & Logo */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 border-b border-slate-200/80 pb-2.5">
+                  <Sparkles className="w-4 h-4 text-purple-600" />
+                  <span>১. এজেন্সির ব্র্যান্ড পরিচিতি ও লোগো (Agency Identity & Logo)</span>
+                </h3>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1 text-xs">
+                      এজেন্সির নাম (Agency Name) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="যেমন: ROT Web Solutions"
+                      value={agencyName}
+                      onChange={(e) => setAgencyName(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-bold focus:outline-none focus:border-red-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1 text-xs">
+                      ট্যাগলাইন / স্লোগান (Tagline)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="যেমন: প্রিমিয়াম মাল্টি-টেন্যান্ট ওয়েবসাইট সল্যুশন"
+                      value={agencyTagline}
+                      onChange={(e) => setAgencyTagline(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-medium focus:outline-none focus:border-red-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Logo Upload Box with Live Preview */}
+                <div className="p-4 bg-white border border-slate-200 rounded-2xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-slate-800 font-bold flex items-center gap-1.5 text-xs">
+                      <ImageIcon className="w-4 h-4 text-purple-600" />
+                      <span>ব্র্যান্ডিং পেজের প্রধান লোগো (Main Brand Logo)</span>
+                    </label>
+                    {agencyLogoUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setAgencyLogoUrl('')}
+                        className="text-[11px] font-bold text-red-600 hover:underline flex items-center gap-1"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>লোগো মুছুন</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {agencyLogoUrl ? (
+                    <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-12 max-w-[180px] bg-white border border-slate-200 rounded-lg p-1.5 flex items-center justify-center">
+                          <img src={agencyLogoUrl} alt="Agency Logo" className="max-h-full max-w-full object-contain" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-900">লোগো প্রিভিউ</p>
+                          <span className="text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md font-bold">সক্রিয় রয়েছে</span>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-3.5 bg-slate-50 border border-dashed border-slate-300 rounded-xl text-center">
+                      <p className="text-xs text-slate-500 font-medium">কোনো লোগো ইমেজ সেট করা নেই (ডিফল্ট লোগো আইকন প্রদর্শিত হবে)</p>
+                    </div>
+                  )}
+
+                  <div className="grid sm:grid-cols-2 gap-2 pt-1">
+                    <label className="w-full bg-slate-50 hover:bg-slate-100 border border-slate-300 text-slate-800 font-bold py-2.5 px-3 rounded-xl cursor-pointer flex items-center justify-center gap-1.5 text-xs transition-colors">
+                      {uploadingField === 'agencyLogo' ? (
+                        <>
+                          <div className="w-3.5 h-3.5 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                          <span>ImgBB আপলোড হচ্ছে...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="w-3.5 h-3.5 text-purple-600" />
+                          <span>কম্পিউটার/মোবাইল থেকে লোগো ফাইল আপলোড</span>
+                        </>
+                      )}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploadingField === 'agencyLogo'}
+                        onChange={(e) => handleFileUpload(e, setAgencyLogoUrl, 'agencyLogo')}
+                        className="hidden"
+                      />
+                    </label>
+
+                    <input
+                      type="url"
+                      placeholder="অথবা সরাসরি লোগো ইমেজ লিঙ্ক (URL)..."
+                      value={agencyLogoUrl}
+                      onChange={(e) => setAgencyLogoUrl(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-medium focus:outline-none focus:border-purple-500 focus:bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 2: WhatsApp & Direct Contact */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 border-b border-slate-200/80 pb-2.5">
+                  <MessageCircle className="w-4 h-4 text-emerald-600" />
+                  <span>২. হোয়াটসঅ্যাপ নম্বর ও সরাসরি যোগাযোগ (WhatsApp & Contact)</span>
+                </h3>
+
+                <div className="grid sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                      <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                      <span>অফিসিয়াল হোয়াটসঅ্যাপ নাম্বার *</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="01711889900 বা +8801711889900"
+                      value={agencyWhatsapp}
+                      onChange={(e) => setAgencyWhatsapp(e.target.value)}
+                      className="w-full bg-emerald-50/70 border border-emerald-300 rounded-xl px-3.5 py-2.5 text-slate-900 font-mono font-black focus:outline-none focus:border-emerald-500"
+                    />
+                    <p className="text-[10px] text-emerald-800 font-medium mt-1">
+                      💡 ব্র্যান্ডিং পেজের 'WhatsApp এ অর্ডার' ও সব ডেমো বাটনে এই নম্বরে মেসেজ যাবে।
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                      <Phone className="w-3.5 h-3.5 text-blue-600" />
+                      <span>হেল্পলাইন ফোন নম্বর</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="01711889900"
+                      value={agencyPhone}
+                      onChange={(e) => setAgencyPhone(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-medium focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-amber-600" />
+                      <span>সাপোর্ট ইমেইল অ্যাড্রেস</span>
+                    </label>
+                    <input
+                      type="email"
+                      placeholder="contact@rotweb.com"
+                      value={agencyEmail}
+                      onChange={(e) => setAgencyEmail(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-slate-900 font-medium focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 3: Social Media Links */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 border-b border-slate-200/80 pb-2.5">
+                  <Globe className="w-4 h-4 text-blue-600" />
+                  <span>৩. ব্র্যান্ডিং পেজের সোশ্যাল মিডিয়া লিঙ্কস (Social Media Channels)</span>
+                </h3>
+
+                <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                      <Facebook className="w-3.5 h-3.5 text-blue-600 fill-current" />
+                      <span>ফেসবুক পেজ লিঙ্ক</span>
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://facebook.com/youragency"
+                      value={agencyFacebook}
+                      onChange={(e) => setAgencyFacebook(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 font-medium focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                      <Youtube className="w-3.5 h-3.5 text-red-600 fill-current" />
+                      <span>ইউটিউব চ্যানেল লিঙ্ক</span>
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://youtube.com/@yourchannel"
+                      value={agencyYoutube}
+                      onChange={(e) => setAgencyYoutube(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 font-medium focus:outline-none focus:border-red-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                      <Instagram className="w-3.5 h-3.5 text-pink-600" />
+                      <span>ইনস্টাগ্রাম প্রোফাইল লিঙ্ক</span>
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://instagram.com/youragency"
+                      value={agencyInstagram}
+                      onChange={(e) => setAgencyInstagram(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 font-medium focus:outline-none focus:border-pink-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-slate-800" />
+                      <span>টিকটক / অন্যান্য লিঙ্ক</span>
+                    </label>
+                    <input
+                      type="url"
+                      placeholder="https://tiktok.com/@youragency"
+                      value={agencyTiktok}
+                      onChange={(e) => setAgencyTiktok(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 font-medium focus:outline-none focus:border-slate-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* SECTION 4: Package Pricing & Content */}
+              <div className="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
+                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2 border-b border-slate-200/80 pb-2.5">
+                  <Sliders className="w-4 h-4 text-purple-600" />
+                  <span>৪. মাসিক প্যাকেজ রেট ও ল্যান্ডিং পেজ কনটেন্ট (Pricing & Content)</span>
+                </h3>
+
+                <div className="grid sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      মাসিক প্যাকেজ ফি (Monthly Price) *
+                    </label>
+                    <div className="flex items-center bg-white border border-slate-200 rounded-xl overflow-hidden px-3 py-2">
+                      <span className="font-bold text-slate-500 mr-2">{agencyCurrencySymbol}</span>
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="500"
+                        value={agencyMonthlyPrice}
+                        onChange={(e) => setAgencyMonthlyPrice(Number(e.target.value))}
+                        className="w-full bg-transparent text-slate-900 font-black text-sm focus:outline-none"
+                      />
+                      <span className="text-[10px] text-slate-400 font-bold shrink-0">/মাস</span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      কারেন্সি চিহ্ন (Currency Symbol)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="৳ বা Tk"
+                      value={agencyCurrencySymbol}
+                      onChange={(e) => setAgencyCurrencySymbol(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-bold focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      টপ ব্যানার অ্যানাউন্সমেন্ট টেক্সট
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="যেমন: মাত্র ৫০০ টাকায় সম্পূর্ণ রেডি প্রিমিয়াম ই-কমার্স ওয়েবসাইট!"
+                      value={agencyAnnouncement}
+                      onChange={(e) => setAgencyAnnouncement(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-medium focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      হিরো সেকশন প্রধান শিরোনাম (Main Hero Headline)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="যেমন: মাত্র ৫০০ টাকায় নিজের ব্র্যান্ডের সম্পূর্ণ ই-কমার্স ওয়েবসাইট"
+                      value={agencyHeroTitle}
+                      onChange={(e) => setAgencyHeroTitle(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-bold focus:outline-none focus:border-purple-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      হিরো সেকশন বিবরণ (Hero Subtitle)
+                    </label>
+                    <textarea
+                      rows={2}
+                      placeholder="যেমন: ডোমেন, হোস্টিং, স্পিডি কার্ট, মোবাইল ফ্রেন্ডলি ও রিয়েলটাইম অ্যাডমিন প্যানেল..."
+                      value={agencyHeroSubtitle}
+                      onChange={(e) => setAgencyHeroSubtitle(e.target.value)}
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3.5 py-2 text-xs text-slate-900 font-medium focus:outline-none focus:border-purple-500 resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('home')}
+                  className="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold transition-all text-xs"
+                >
+                  হোমে ফিরে যান
+                </button>
+
+                <button
+                  type="submit"
+                  className="px-8 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black flex items-center gap-2 shadow-md transition-all active:scale-95 text-xs"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>সকল ব্র্যান্ডিং তথ্য ক্লাউডে সেভ করুন</span>
+                </button>
+              </div>
+            </form>
           </div>
         )}
 
